@@ -1,0 +1,35 @@
+{
+  "extends": "expo/tsconfig.base",
+  "compilerOptions": {
+    "target": "ES2020",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "jsx": "react-jsx",
+    "baseUrl": "./src",
+    "paths": {
+      "@/*": ["*"]
+    },
+    "allowSyntheticDefaultImports": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "resolveJsonModule": true,
+    "noEmit": true,
+    "strict": true,
+    "forceConsistentCasingInFileNames": true,
+    "isolatedModules": true,
+    "lib": ["ESNext", "DOM"],
+    "types": ["node", "react", "react-native", "jest"],
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true,
+    "customConditions": ["react-native"]
+  },
+  "include": [
+    "src",
+    "index.ts",
+    "index.tsx",
+    "App.tsx",
+    "App.js",
+    "jest.config.js"
+  ],
+  "exclude": ["node_modules", "babel.config.js", "metro.config.js"]
+}

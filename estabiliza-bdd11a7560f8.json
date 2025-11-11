@@ -1,0 +1,13 @@
+{
+  "type": "service_account",
+  "project_id": "estabiliza",
+  "private_key_id": "bdd11a7560f8043b684c6bad7fdbfdc70da95d85",
+  "private_key": "-----BEGIN PRIVATE KEY-----\nMIIEvAIBADANBgkqhkiG9w0BAQEFAASCBKYwggSiAgEAAoIBAQCxksuf3JfDj8Fg\n75dHbMw7nLnhaRvs61a+oX3AvjUUOSt2+fPiYM2mgi2MrxItzJhHsoze+m/Q46qq\nNoTv15LEn/01AFCVtmxvsoZ4zHRKeeGn60okFPufNHhs3rP1IglJHLwf6NJoZ5wW\ntJW70h3+ZvlAw4HU8vyJIvQkl70N7DG2thDfMWmSBuKhxAQT0gupKURVs1++omGI\nZI43ZlISHVSULHRqbPBBFrVfxqBGbK3nZ/JsK5CGBF0gkoJgvAB3QtHPR6qFmNLG\nqqtAginy3afQlKFC445R37Crwn2ulOjb3Np54vxL4Jkx0cZHJR+EHkLQfIEucJgq\ngK0FfPX1AgMBAAECggEAIE0A08FDbPwdE8Y5WTF5/Bz/9fgR75iGhLIpBxLCYn2c\nwa1pduQffHqhEP52mtSk3aPlupjJFrEXJhO5PkyTIsesfkPipL0UgAP0MIyWWcbO\nbKZg6+vSMo1Pm5QuHXjVwhIjSVWnUn0IWFv8gbgQoyp1jBmUKBmUJNjyGqbsaZfg\nAqzy1byzSne3CRAME1oaGZg5wXWB7qlYWRNWcEodJtMlXvzUTPo3TjjUHghmVDUd\n/zpNU83A0RVwhJtcP4J0NyWJibkM6ocOSM1g/7SwobrqTa422lZI+j8LeztDowNc\nOVsOXtFt+gUNTsorSFEO7JJKjeMg6iW2F6JHnsAhyQKBgQDaloSz2U3Ph/a/azeo\nea651xP5dJZhzZ9DXDpq3IEXDRb9eXjG8pj+EW0Ewjpzvy1ovgWVhQbow4ZaWQDK\nKY4TKgTZ1VVDmZNmolV2ACSXGSrVT4Nt1JCaNheUiVp/gqHPjVA6Q2mgTT2ytJlS\n0pwVCBXz+YTPpjp0CKr/UDsp2QKBgQDP9zcn5EaWMno7JqJSsURtt4M00kIV8NAd\nxYY/CxtQkgNTBBXNrEHH4hsOU6H+qDCX7qEt5hr2ZCfanGiYGSSwLa+ChG62qjmD\nJNbftPd47sOF7iaSi3IOwIVeTofSDr6jNFr+dIy5CdGE8Lslq57F6ha5qNpf6GnY\nlAxbd2JffQKBgFkVYM2/MQP0IG6QrqU9uiTI774JcsQ3PcIBE1m7teyEDCuPVtaV\nxh49UdXPpmzHrCT01GfESDWSge3OOhEp8FoFFOcGF3KuYzE/1V563m6p9hfrCOA4\n8hm3E9MYS0aOIY3pxJmKIcEP2aY8DgSACtZTbkb5GNRbpZTmd3IH66S5AoGAZvWf\nqvJLOAUZmrtP1dzJYgBexwHpke89OeAWzJN1HHiNiMYW/VJw5sK8XmVtaCRgmneb\n+JtZce64BHU3G0YnccnMgLOMFIdGHfVZJDv14TtkNaRoGFlNSJxr6vq6J3cBTs+W\n1S9ilCGWR1jfbpD+9EEmqxg7tQvdi0oQrB/45gkCgYBBvkkQ0wDgpqYgcC7F5Cak\nsxU1/sF44UerTDr4zP2R3/GsicuzoKbJOlz8im9ytxv5ppI3y3+ye0ulHB6bN+1+\nvg5sVojSFVS+AMfBaCtwmZac34K3c2S0sJlOfcpipUdgr8wZAXQdkAD5f4zVP37W\nJERkpcJGwNLQBEGZsM3Hag==\n-----END PRIVATE KEY-----\n",
+  "client_email": "expo-eas-upload@estabiliza.iam.gserviceaccount.com",
+  "client_id": "115053446752144267970",
+  "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+  "token_uri": "https://oauth2.googleapis.com/token",
+  "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
+  "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/expo-eas-upload%40estabiliza.iam.gserviceaccount.com",
+  "universe_domain": "googleapis.com"
+}

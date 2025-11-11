@@ -1,0 +1,54 @@
+{
+  "expo": {
+    "name": "Estabiliza",
+    "slug": "estabiliza",
+    "scheme": "estabiliza",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "automatic",
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#FDFBF7"
+    },
+    "assetBundlePatterns": [
+      "**/*"
+    ],
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.seunome.estabiliza",
+      "infoPlist": {
+        "UIBackgroundModes": [
+          "remote-notification"
+        ]
+      }
+    },
+    "android": {
+      "package": "com.seunome.estabiliza",
+      "icon": "./assets/icon.png",
+      "permissions": [
+        "android.permission.POST_NOTIFICATIONS"
+      ],
+      "softwareKeyboardLayoutMode": "pan"
+    },
+    "notification": {
+      "icon": "./assets/notification-icon.png",
+      "color": "#B4A5D9",
+      "androidMode": "default",
+      "androidCollapsedTitle": "Estabiliza"
+    },
+    "plugins": [
+      "expo-notifications",
+      "expo-asset",
+      "expo-font",
+      "expo-web-browser"
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "99b1489f-987a-4ccf-88fc-37c833a852bf"
+      }
+    },
+    "owner": "meycatre"
+  }
+}
