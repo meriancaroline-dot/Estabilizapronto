@@ -1,27 +1,12 @@
-// -------------------------------------------------------------
 // src/hooks/useReminders.ts
-// -------------------------------------------------------------
-// Gerencia lembretes + integra com NotificationContext
-// (criar, editar, excluir, completar)
-// -------------------------------------------------------------
 import { useCallback, useEffect, useState } from 'react';
-import { Alert } from 'react-native';
 import { v4 as uuidv4 } from 'uuid';
-
 import { useStorage } from './useStorage';
-import { useNotifications } from '@/contexts/NotificationContext';
 import { Reminder } from '@/types/models';
+import { notificationManager } from '@/utils/NotificationManager'; // ✅ NOVO
+import { handleError } from '@/utils/errorHandler'; // ✅ NOVO
 
-// -------------------------------------------------------------
-// Hook principal
-// -------------------------------------------------------------
 export function useReminders() {
-  const {
-    scheduleReminder,
-    cancelNotification,
-    refreshScheduled,
-  } = useNotifications();
-
   const {
     value: reminders,
     setValue: setReminders,
@@ -34,162 +19,150 @@ export function useReminders() {
 
   const [loading, setLoading] = useState(true);
 
-  // -----------------------------------------------------------
-  // Carregar lembretes na inicialização
-  // -----------------------------------------------------------
   useEffect(() => {
     (async () => {
       try {
         await loadReminders();
-        await refreshScheduled();
       } catch (e) {
         console.error('Erro ao carregar lembretes:', e);
       } finally {
         setLoading(false);
       }
     })();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // -----------------------------------------------------------
-  // Adicionar lembrete
-  // -----------------------------------------------------------
   const addReminder = useCallback(
-    async (
-      data: Omit<
-        Reminder,
-        'id' | 'isCompleted' | 'createdAt' | 'updatedAt' | 'notificationId'
-      >,
-    ) => {
+    async (data: Omit<Reminder, 'id' | 'isCompleted' | 'createdAt' | 'notificationId'>) => {
       try {
-        const nowIso = new Date().toISOString();
-
         const newReminder: Reminder = {
           ...data,
           id: uuidv4(),
           isCompleted: false,
-          createdAt: nowIso,
-          updatedAt: nowIso,
+          createdAt: new Date().toISOString(),
         };
 
-        const listAfterAdd = [...reminders, newReminder];
-        setReminders(listAfterAdd);
-        await saveReminders(listAfterAdd);
+        // ✅ USA O NOTIFICATION MANAGER
+        const notificationDate = new Date(`${data.date}T${data.time}`);
+        const notifId = await notificationManager.schedule({
+          title: '🔔 Lembrete',
+          body: data.title,
+          date: notificationDate,
+          repeat: data.repeat || 'none',
+        });
 
-        // agenda notificação
-        const notifId = await scheduleReminder(newReminder);
         if (notifId) {
-          const listWithNotif = listAfterAdd.map((r) =>
-            r.id === newReminder.id ? { ...r, notificationId: notifId } : r,
-          );
-          setReminders(listWithNotif);
-          await saveReminders(listWithNotif);
+          newReminder.notificationId = notifId;
         }
 
+        const updated = [...reminders, newReminder];
+        setReminders(updated);
+        await saveReminders(updated);
+
         console.log('✅ Lembrete criado:', newReminder.title);
-      } catch (e) {
-        console.error('Erro ao adicionar lembrete:', e);
-        Alert.alert('Erro', 'Não foi possível criar o lembrete.');
+        return newReminder;
+      } catch (error) {
+        handleError(error, 'useReminders.addReminder');
+        throw error;
       }
     },
-    [reminders, saveReminders, scheduleReminder, setReminders],
+    [reminders, setReminders, saveReminders],
   );
 
-  // -----------------------------------------------------------
-  // Atualizar lembrete
-  // -----------------------------------------------------------
   const updateReminder = useCallback(
     async (id: string, updates: Partial<Reminder>) => {
       try {
-        const current = reminders.find((r) => r.id === id);
-        if (!current) return;
+        const reminder = reminders.find(r => r.id === id);
+        if (!reminder) throw new Error('Lembrete não encontrado');
 
-        // se tinha notificação anterior, cancela
-        if (current.notificationId) {
-          await cancelNotification(current.notificationId);
-        }
+        const updatedList = reminders.map(r => {
+          if (r.id !== id) return r;
+          return { ...r, ...updates, updatedAt: new Date().toISOString() };
+        });
 
-        const merged: Reminder = {
-          ...current,
-          ...updates,
-          updatedAt: new Date().toISOString(),
-        };
-
-        // re-agenda notificação
-        const notifId = await scheduleReminder(merged);
-        const withNotif: Reminder = {
-          ...merged,
-          notificationId: notifId ?? undefined,
-        };
-
-        const updatedList = reminders.map((r) => (r.id === id ? withNotif : r));
         setReminders(updatedList);
         await saveReminders(updatedList);
 
+        // ✅ Atualizar notificação se data/hora mudou
+        if (updates.date || updates.time) {
+          const updated = updatedList.find(r => r.id === id)!;
+
+          if (reminder.notificationId) {
+            await notificationManager.cancel(reminder.notificationId);
+          }
+
+          const notificationDate = new Date(`${updated.date}T${updated.time}`);
+          const notifId = await notificationManager.schedule({
+            title: '🔔 Lembrete',
+            body: updated.title,
+            date: notificationDate,
+            repeat: updated.repeat || 'none',
+          });
+
+          if (notifId) {
+            updated.notificationId = notifId;
+            await saveReminders(updatedList);
+          }
+        }
+
         console.log('✏️ Lembrete atualizado:', id);
-      } catch (e) {
-        console.error('Erro ao atualizar lembrete:', e);
-        Alert.alert('Erro', 'Não foi possível atualizar o lembrete.');
+        return updatedList.find(r => r.id === id)!;
+      } catch (error) {
+        handleError(error, 'useReminders.updateReminder');
+        throw error;
       }
     },
-    [reminders, cancelNotification, scheduleReminder, saveReminders, setReminders],
+    [reminders, setReminders, saveReminders],
   );
 
-  // -----------------------------------------------------------
-  // Remover lembrete
-  // -----------------------------------------------------------
   const deleteReminder = useCallback(
     async (id: string) => {
       try {
-        const target = reminders.find((r) => r.id === id);
+        const reminder = reminders.find(r => r.id === id);
+        const filtered = reminders.filter(r => r.id !== id);
 
-        const filtered = reminders.filter((r) => r.id !== id);
         setReminders(filtered);
         await saveReminders(filtered);
 
-        if (target?.notificationId) {
-          await cancelNotification(target.notificationId);
+        // ✅ Cancelar notificação
+        if (reminder?.notificationId) {
+          await notificationManager.cancel(reminder.notificationId);
         }
 
         console.log('🗑️ Lembrete removido:', id);
-      } catch (e) {
-        console.error('Erro ao remover lembrete:', e);
-        Alert.alert('Erro', 'Não foi possível remover o lembrete.');
+      } catch (error) {
+        handleError(error, 'useReminders.deleteReminder');
+        throw error;
       }
     },
-    [reminders, saveReminders, setReminders, cancelNotification],
+    [reminders, setReminders, saveReminders],
   );
 
-  // -----------------------------------------------------------
-  // Alternar conclusão
-  // -----------------------------------------------------------
   const toggleComplete = useCallback(
     async (id: string) => {
       try {
-        const updated = reminders.map((r) =>
-          r.id === id ? { ...r, isCompleted: !r.isCompleted } : r,
+        const updated = reminders.map(r =>
+          r.id === id ? { ...r, isCompleted: !r.isCompleted } : r
         );
         setReminders(updated);
         await saveReminders(updated);
-      } catch (e) {
-        console.error('Erro ao alternar lembrete:', e);
+      } catch (error) {
+        handleError(error, 'useReminders.toggleComplete');
+        throw error;
       }
     },
-    [reminders, saveReminders, setReminders],
+    [reminders, setReminders, saveReminders],
   );
 
-  // -----------------------------------------------------------
-  // Limpar todos
-  // -----------------------------------------------------------
   const clearReminders = useCallback(async () => {
     try {
       setReminders([]);
       await saveReminders([]);
       console.log('🧹 Lembretes limpos.');
-    } catch (e) {
-      console.error('Erro ao limpar lembretes:', e);
+    } catch (error) {
+      handleError(error, 'useReminders.clearReminders');
+      throw error;
     }
-  }, [saveReminders, setReminders]);
+  }, [setReminders, saveReminders]);
 
   return {
     reminders,
