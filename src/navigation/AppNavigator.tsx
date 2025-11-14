@@ -1,8 +1,6 @@
 // -------------------------------------------------------------
 // src/navigation/AppNavigator.tsx
 // -------------------------------------------------------------
-// Stack raiz do app — decide se mostra o login ou o app
-// -------------------------------------------------------------
 import React from "react";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { ActivityIndicator, View } from "react-native";
@@ -16,13 +14,20 @@ import LoginScreen from "@/screens/LoginScreen";
 import RegisterScreen from "@/screens/RegisterScreen";
 import ForgotPasswordScreen from "@/screens/ForgotPasswordScreen";
 
+// ⭐ Telas do módulo de parceiros
+import PartnersScreen from "@/screens/PartnersScreen";
+import PartnerDetailScreen from "@/screens/PartnerDetailScreen";
+
+// ⭐ Tela de Modo Crise (AGORA ATIVADA)
+import CrisisScreen from "@/screens/CrisisScreen";
+
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
 export default function AppNavigator() {
   const { theme } = useTheme();
   const { user, loading } = useUser();
 
-  // Mostra um mini loader enquanto verifica login salvo
+  // Loader inicial
   if (loading) {
     return (
       <View
@@ -48,20 +53,51 @@ export default function AppNavigator() {
       }}
     >
       {user ? (
-        // ✅ Usuário logado → mostra as abas principais
-        <Stack.Screen
-          name="Tabs"
-          component={BottomTabs}
-          options={{ headerShown: false }}
-        />
+        <>
+          {/* Telas principais */}
+          <Stack.Screen
+            name="Tabs"
+            component={BottomTabs}
+            options={{ headerShown: false }}
+          />
+
+          {/* Parceiros */}
+          <Stack.Screen
+            name="PartnersScreen"
+            component={PartnersScreen}
+            options={{
+              title: "Parceiros Estabiliza",
+              headerBackTitle: "Voltar",
+            }}
+          />
+
+          <Stack.Screen
+            name="PartnerDetail"
+            component={PartnerDetailScreen}
+            options={{
+              title: "Detalhes do Parceiro",
+              headerBackTitle: "Voltar",
+            }}
+          />
+
+          {/* ⭐ Tela de Modo Crise — AGORA FUNCIONANDO */}
+          <Stack.Screen
+            name="CrisisScreen"
+            component={CrisisScreen}
+            options={{
+              title: "Modo Crise",
+              headerBackTitle: "Voltar",
+            }}
+          />
+        </>
       ) : (
-        // 🚪 Usuário deslogado → mostra telas de autenticação
         <>
           <Stack.Screen
             name="Login"
             component={LoginScreen}
             options={{ headerShown: false }}
           />
+
           <Stack.Screen
             name="Register"
             component={RegisterScreen}
@@ -70,6 +106,7 @@ export default function AppNavigator() {
               headerBackTitle: "Voltar",
             }}
           />
+
           <Stack.Screen
             name="ForgotPassword"
             component={ForgotPasswordScreen}

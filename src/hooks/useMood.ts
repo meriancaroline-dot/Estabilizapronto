@@ -1,35 +1,35 @@
+// -------------------------------------------------------------
 // src/hooks/useMood.ts
+// -------------------------------------------------------------
+
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Alert } from "react-native";
 import "react-native-get-random-values";
 import { v4 as uuidv4 } from "uuid";
 import { useStorage } from "./useStorage";
+import * as Notifications from "expo-notifications";
 
 // -------------------------------------------------------------
-// Tipo do humor + clima + estação
+// Tipo do humor + clima + estação + ciclo
 // -------------------------------------------------------------
 export type MoodEntry = {
   id: string;
   date: string; // YYYY-MM-DD
   period: "morning" | "afternoon" | "night";
-  mood: string; // Ex: "Muito feliz"
-  emoji: string; // Ex: "😁"
-  rating: number; // 1–5 (interno, pra estatísticas)
+  mood: string;
+  emoji: string;
+  rating: number; // 1–5
   climate?: "quente" | "frio" | "chuvoso" | "nublado" | "ensolarado";
   season?: "verão" | "outono" | "inverno" | "primavera";
+  isMenstrual?: boolean; // ⭐ NOVO
 };
 
 // -------------------------------------------------------------
-// Helper: estação do ano (aproximação hemisfério sul)
+// Estação do ano (BR)
 // -------------------------------------------------------------
 function getSeason(date: Date): MoodEntry["season"] {
-  const month = date.getMonth() + 1; // 1–12
+  const month = date.getMonth() + 1;
 
-  // Aproximação simples BR:
-  // Verão: Dez, Jan, Fev
-  // Outono: Mar, Abr, Mai
-  // Inverno: Jun, Jul, Ago
-  // Primavera: Set, Out, Nov
   if (month === 12 || month === 1 || month === 2) return "verão";
   if (month === 3 || month === 4 || month === 5) return "outono";
   if (month === 6 || month === 7 || month === 8) return "inverno";
@@ -40,6 +40,7 @@ function getSeason(date: Date): MoodEntry["season"] {
 // Hook principal
 // -------------------------------------------------------------
 export function useMood() {
+  // moods salvos
   const {
     value: moods,
     setValue: setMoods,
@@ -50,25 +51,77 @@ export function useMood() {
     initialValue: [],
   });
 
+  // XP e streak salvos
+  const {
+    value: moodStats,
+    setValue: setMoodStats,
+    save: saveMoodStats,
+    load: loadMoodStats,
+  } = useStorage<{ xp: number; streak: number; lastDate: string | null }>({
+    key: "mood_stats",
+    initialValue: { xp: 0, streak: 0, lastDate: null },
+  });
+
   const [loading, setLoading] = useState(true);
 
-  // -----------------------------------------------------------
-  // Carregar registros salvos
-  // -----------------------------------------------------------
+  // carregar moods
   useEffect(() => {
     (async () => {
       try {
         await loadMoods();
+        await loadMoodStats();
       } catch (e) {
         console.error("Erro ao carregar moods:", e);
       } finally {
         setLoading(false);
       }
     })();
-  }, [loadMoods]);
+  }, [loadMoods, loadMoodStats]);
 
   // -----------------------------------------------------------
-  // Adiciona ou atualiza o humor de um período do dia
+  // XP + STREAK
+  // -----------------------------------------------------------
+  const registerXPandStreak = useCallback(
+    async (today: string) => {
+      const stats = moodStats ?? { xp: 0, streak: 0, lastDate: null };
+
+      const newXP = (stats.xp ?? 0) + 10; // +10 XP por registro
+
+      let newStreak = stats.streak ?? 0;
+
+      if (!stats.lastDate) {
+        newStreak = 1;
+      } else {
+        const last = new Date(stats.lastDate);
+        const current = new Date(today);
+
+        const diff =
+          (current.getTime() - last.getTime()) /
+          (1000 * 60 * 60 * 24);
+
+        if (diff === 1) {
+          newStreak += 1;
+        } else if (diff > 1) {
+          newStreak = 1;
+        }
+      }
+
+      const updated = {
+        xp: newXP,
+        streak: newStreak,
+        lastDate: today,
+      };
+
+      setMoodStats(updated);
+      await saveMoodStats(updated);
+
+      console.log(`✨ +10 XP | 🔥 streak: ${newStreak}`);
+    },
+    [moodStats, setMoodStats, saveMoodStats]
+  );
+
+  // -----------------------------------------------------------
+  // Adiciona ou atualiza humor
   // -----------------------------------------------------------
   const addMood = useCallback(
     async (
@@ -76,11 +129,12 @@ export function useMood() {
       mood: string,
       emoji: string,
       rating: number,
-      climate?: MoodEntry["climate"]
+      climate?: MoodEntry["climate"],
+      isMenstrual?: boolean
     ) => {
       try {
         const now = new Date();
-        const today = now.toISOString().split("T")[0]; // YYYY-MM-DD
+        const today = now.toISOString().split("T")[0];
         const season = getSeason(now);
 
         const existing = moods.find(
@@ -96,6 +150,7 @@ export function useMood() {
           rating,
           climate,
           season,
+          isMenstrual,
         };
 
         const updated = existing
@@ -105,10 +160,12 @@ export function useMood() {
         if (JSON.stringify(moods) !== JSON.stringify(updated)) {
           setMoods(updated);
           await saveMoods(updated);
+          await registerXPandStreak(today);
+
           console.log(
             `🧠 Humor salvo (${period}) — ${mood}${
               climate ? ` | clima: ${climate}` : ""
-            } | estação: ${season}`
+            } | estação: ${season}${isMenstrual ? " | período menstrual" : ""}`
           );
         }
       } catch (e) {
@@ -116,11 +173,11 @@ export function useMood() {
         Alert.alert("Erro", "Não foi possível registrar o humor.");
       }
     },
-    [moods, setMoods, saveMoods]
+    [moods, setMoods, saveMoods, registerXPandStreak]
   );
 
   // -----------------------------------------------------------
-  // Excluir humor específico
+  // Excluir humor
   // -----------------------------------------------------------
   const deleteMood = useCallback(
     async (id: string) => {
@@ -138,7 +195,7 @@ export function useMood() {
   );
 
   // -----------------------------------------------------------
-  // Limpar todos os registros
+  // Limpar todos
   // -----------------------------------------------------------
   const clearMoods = useCallback(async () => {
     try {
@@ -151,7 +208,7 @@ export function useMood() {
   }, [setMoods, saveMoods]);
 
   // -----------------------------------------------------------
-  // Últimos 7 dias (pra gráficos/análises)
+  // Últimos 7 dias
   // -----------------------------------------------------------
   const getLast7Days = useCallback(() => {
     const now = new Date();
@@ -164,7 +221,7 @@ export function useMood() {
   }, [moods]);
 
   // -----------------------------------------------------------
-  // Média diária (data -> média de rating)
+  // Média diária
   // -----------------------------------------------------------
   const getDailyAverage = useCallback(() => {
     const grouped: Record<string, { total: number; count: number }> = {};
@@ -180,7 +237,7 @@ export function useMood() {
   }, [moods]);
 
   // -----------------------------------------------------------
-  // Último humor registrado
+  // Último humor
   // -----------------------------------------------------------
   const lastMood = useMemo(() => {
     if (!moods.length) return null;
@@ -191,7 +248,7 @@ export function useMood() {
   }, [moods]);
 
   // -----------------------------------------------------------
-  // Último humor por período (manhã/tarde/noite)
+  // Último humor por período
   // -----------------------------------------------------------
   const lastMoodByPeriod = useMemo(() => {
     const result: Partial<Record<MoodEntry["period"], MoodEntry>> = {};
@@ -200,7 +257,8 @@ export function useMood() {
         result[period] = [...moods]
           .filter((m) => m.period === period)
           .sort(
-            (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
+            (a, b) =>
+              new Date(b.date).getTime() - new Date(a.date).getTime()
           )[0];
       }
     );
@@ -217,5 +275,49 @@ export function useMood() {
     getDailyAverage,
     lastMood,
     lastMoodByPeriod,
+
+    // ⭐ novos:
+    xp: moodStats?.xp ?? 0,
+    streak: moodStats?.streak ?? 0,
   };
+}
+
+// ----------------------------------------------------------------
+// Notificações automáticas de humor
+// ----------------------------------------------------------------
+export function useMoodPrompts() {
+  useEffect(() => {
+    (async () => {
+      const scheduled = await Notifications.getAllScheduledNotificationsAsync();
+
+      const alreadyScheduled = scheduled.some((n) =>
+        n.content?.title?.includes("Como você está se sentindo?")
+      );
+      if (alreadyScheduled) return;
+
+      const prompts = [
+        { hour: 9, minute: 0, label: "da manhã" },
+        { hour: 14, minute: 0, label: "da tarde" },
+        { hour: 20, minute: 0, label: "da noite" },
+      ];
+
+      for (const { hour, minute, label } of prompts) {
+        await Notifications.scheduleNotificationAsync({
+          content: {
+            title: "Como você está se sentindo?",
+            body: `Registre seu humor ${label}.`,
+            sound: false, // ⭐ sem som
+            vibrate: [200], // ⭐ vibração curtinha
+          },
+          trigger: {
+            type: Notifications.SchedulableTriggerInputTypes.DAILY,
+            hour,
+            minute,
+          },
+        });
+      }
+
+      console.log("🕒 Lembretes diários de humor agendados.");
+    })();
+  }, []);
 }

@@ -32,15 +32,29 @@ export default function ProfileScreen() {
   const [tab, setTab] = useState<"achievements" | "missions">("achievements");
 
   const unlocked = getUnlocked();
+  console.log("ACHIEVEMENTS NA TELA:", achievements);
+
   const locked = getLocked();
 
-  // Nívelzinho simples: 1 nível a cada 3 conquistas desbloqueadas
-  const level = Math.max(1, Math.floor(unlocked.length / 3) + 1);
+  // 🎯 separamos conquistas reais das metas
+  const uniqueUnlocked = unlocked.filter((a) => !a.isMeta);
+  const collectorUnlocked = unlocked.filter((a) => a.isMeta);
+
+  // Nível: só com conquistas reais
+  const level = Math.max(1, Math.floor(uniqueUnlocked.length / 3) + 1);
   const totalForNext = level * 3;
   const progressToNext =
     totalForNext === 0
       ? 0
-      : Math.min(100, Math.round((unlocked.length / totalForNext) * 100));
+      : Math.min(
+          100,
+          Math.round((uniqueUnlocked.length / totalForNext) * 100)
+        );
+
+  const levelSubtitle =
+    collectorUnlocked.length > 0
+      ? `${uniqueUnlocked.length} conquistas únicas • ${collectorUnlocked.length} de coleção • ${progressToNext}% até o próximo nível`
+      : `${uniqueUnlocked.length} conquistas • ${progressToNext}% até o próximo nível`;
 
   // Missões estáticas por enquanto (só pra explicar pro usuário)
   const missions = [
@@ -76,7 +90,6 @@ export default function ProfileScreen() {
   };
 
   const handleEditProfile = () => {
-    // mantém sua navegação atual
     navigation.navigate("EditProfile");
   };
 
@@ -85,7 +98,9 @@ export default function ProfileScreen() {
   };
 
   return (
-    <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
+    <View
+      style={[styles.container, { backgroundColor: theme.colors.background }]}
+    >
       <ScrollView
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
@@ -114,18 +129,23 @@ export default function ProfileScreen() {
 
             <View style={styles.levelRow}>
               <View style={styles.levelBadge}>
-                <Ionicons name="sparkles-outline" size={14} color={theme.colors.primary} />
+                <Ionicons
+                  name="sparkles-outline"
+                  size={14}
+                  color={theme.colors.primary}
+                />
                 <Text style={styles.levelText}>Nível {level}</Text>
               </View>
-              <Text style={styles.levelSub}>
-                {unlocked.length} conquistas • {progressToNext}% até o próximo nível
-              </Text>
+              <Text style={styles.levelSub}>{levelSubtitle}</Text>
 
-              <View style={styles.levelBar}>
+<View style={styles.levelBar}>
                 <View
                   style={[
                     styles.levelBarFill,
-                    { width: `${progressToNext}%`, backgroundColor: theme.colors.primary },
+                    {
+                      width: `${progressToNext}%`,
+                      backgroundColor: theme.colors.primary,
+                    },
                   ]}
                 />
               </View>
@@ -160,7 +180,11 @@ export default function ProfileScreen() {
             style={[styles.quickButton, { borderColor: theme.colors.border }]}
             onPress={handleGoToSettings}
           >
-            <Ionicons name="settings-outline" size={18} color={theme.colors.text} />
+            <Ionicons
+              name="settings-outline"
+              size={18}
+              color={theme.colors.text}
+            />
             <Text style={styles.quickButtonText}>Configurações</Text>
           </TouchableOpacity>
         </View>
@@ -180,7 +204,10 @@ export default function ProfileScreen() {
             <Text
               style={[
                 styles.tabText,
-                tab === "achievements" && { color: theme.colors.primary, fontWeight: "700" },
+                tab === "achievements" && {
+                  color: theme.colors.primary,
+                  fontWeight: "700",
+                },
               ]}
             >
               Conquistas
@@ -200,7 +227,10 @@ export default function ProfileScreen() {
             <Text
               style={[
                 styles.tabText,
-                tab === "missions" && { color: theme.colors.primary, fontWeight: "700" },
+                tab === "missions" && {
+                  color: theme.colors.primary,
+                  fontWeight: "700",
+                },
               ]}
             >
               Missões
@@ -221,6 +251,7 @@ export default function ProfileScreen() {
               <View style={styles.medalsGrid}>
                 {achievements.map((a) => {
                   const isUnlocked = Boolean(a.unlockedAt);
+                  const isMeta = Boolean(a.isMeta);
                   return (
                     <View
                       key={a.id}
@@ -237,6 +268,13 @@ export default function ProfileScreen() {
                       <Text style={styles.medalTitle} numberOfLines={2}>
                         {a.title}
                       </Text>
+
+                      {isMeta && (
+                        <View style={styles.medalTag}>
+                          <Text style={styles.medalTagText}>Coleção</Text>
+                        </View>
+                      )}
+
                       <View style={styles.medalProgressRow}>
                         <View style={styles.medalProgressBar}>
                           <View
@@ -254,9 +292,7 @@ export default function ProfileScreen() {
                         </Text>
                       </View>
                       <Text style={styles.medalStatusText}>
-                        {isUnlocked
-                          ? "Desbloqueada"
-                          : "Em progresso"}
+                        {isUnlocked ? "Desbloqueada" : "Em progresso"}
                       </Text>
                     </View>
                   );
@@ -277,11 +313,18 @@ export default function ProfileScreen() {
                 key={m.id}
                 style={[
                   styles.missionCard,
-                  { borderColor: theme.colors.border, backgroundColor: theme.colors.surface },
+                  {
+                    borderColor: theme.colors.border,
+                    backgroundColor: theme.colors.surface,
+                  },
                 ]}
               >
                 <View style={styles.missionHeader}>
-                  <Ionicons name="flag-outline" size={16} color={theme.colors.primary} />
+                  <Ionicons
+                    name="flag-outline"
+                    size={16}
+                    color={theme.colors.primary}
+                  />
                   <Text style={styles.missionTitle}>{m.title}</Text>
                 </View>
                 <Text style={styles.missionDesc}>{m.description}</Text>
@@ -297,7 +340,11 @@ export default function ProfileScreen() {
             onPress={handleLogoutPress}
             style={[styles.logoutButton, { borderColor: theme.colors.border }]}
           >
-            <Ionicons name="log-out-outline" size={16} color={theme.colors.textSecondary} />
+            <Ionicons
+              name="log-out-outline"
+              size={16}
+              color={theme.colors.textSecondary}
+            />
             <Text style={styles.logoutText}>Sair da conta</Text>
           </TouchableOpacity>
         </View>
@@ -310,13 +357,18 @@ export default function ProfileScreen() {
         animationType="fade"
         onRequestClose={() => setThemePopupVisible(false)}
       >
-        <TouchableWithoutFeedback onPress={() => setThemePopupVisible(false)}>
+        <TouchableWithoutFeedback
+          onPress={() => setThemePopupVisible(false)}
+        >
           <View style={styles.themeModalBackdrop}>
             <TouchableWithoutFeedback>
               <View
                 style={[
                   styles.themeModalCard,
-                  { backgroundColor: theme.colors.surface, borderColor: theme.colors.border },
+                  {
+                    backgroundColor: theme.colors.surface,
+                    borderColor: theme.colors.border,
+                  },
                 ]}
               >
                 <Text style={styles.themeModalTitle}>Aparência</Text>
@@ -373,11 +425,7 @@ function ThemeOption({ label, icon, selected, onPress }: ThemeOptionProps) {
       ]}
       activeOpacity={0.8}
     >
-      <Ionicons
-        name={icon}
-        size={18}
-        color={selected ? "#fff" : "#555"}
-      />
+      <Ionicons name={icon} size={18} color={selected ? "#fff" : "#555"} />
       <Text
         style={[
           themeOptionStyles.optionText,
@@ -607,7 +655,20 @@ const createStyles = (theme: ReturnType<typeof useTheme>["theme"]) =>
       fontSize: 13,
       fontWeight: "600",
       color: theme.colors.text,
-      marginBottom: 6,
+      marginBottom: 2,
+    },
+    medalTag: {
+      alignSelf: "flex-start",
+      paddingHorizontal: 6,
+      paddingVertical: 2,
+      borderRadius: 999,
+      backgroundColor: theme.colors.primary + "20",
+      marginBottom: 4,
+    },
+    medalTagText: {
+      fontSize: 10,
+      color: theme.colors.primary,
+      fontWeight: "600",
     },
     medalProgressRow: {
       flexDirection: "row",

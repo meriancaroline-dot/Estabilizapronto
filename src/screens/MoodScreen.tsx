@@ -22,6 +22,7 @@ export default function MoodScreen() {
   >("morning");
   const [selectedMood, setSelectedMood] = useState<string | null>(null);
   const [selectedClimate, setSelectedClimate] = useState<string | null>(null);
+  const [isMenstrual, setIsMenstrual] = useState(false); // ⭐ NOVO
 
   const moodOptions = [
     { id: "muito_feliz", label: "Muito feliz", emoji: "😁", color: "#FFD93D", rating: 5 },
@@ -62,7 +63,8 @@ export default function MoodScreen() {
         chosen?.label ?? "Neutro",
         chosen?.emoji ?? "😐",
         chosen?.rating ?? 3,
-        selectedClimate as any
+        selectedClimate as any,
+        isMenstrual // ⭐ NOVO
       );
       Alert.alert(
         "Registrado",
@@ -72,6 +74,7 @@ export default function MoodScreen() {
       );
       setSelectedMood(null);
       setSelectedClimate(null);
+      setIsMenstrual(false); // limpa flag
     } catch {
       Alert.alert("Erro", "Não foi possível registrar o humor.");
     }
@@ -108,6 +111,7 @@ export default function MoodScreen() {
               : "noite"}
             {item.climate ? ` • ${item.climate}` : ""}
             {item.season ? ` • ${item.season}` : ""}
+            {item.isMenstrual ? " • período menstrual" : ""} {/* ⭐ NOVO */}
             )
           </Text>
           <Text style={styles.historyDate}>{item.date}</Text>
@@ -189,6 +193,34 @@ export default function MoodScreen() {
               </Text>
             </TouchableOpacity>
           ))}
+        </View>
+
+        {/* Período menstrual */}
+        <Text style={styles.sectionLabel}>Ciclo</Text>
+        <View style={styles.rowChips}>
+          <TouchableOpacity
+            onPress={() => setIsMenstrual((prev) => !prev)}
+            style={[
+              styles.chip,
+              isMenstrual && {
+                backgroundColor: theme.colors.warning + "18",
+                borderColor: theme.colors.warning,
+              },
+            ]}
+          >
+            <Text style={styles.chipEmoji}>{isMenstrual ? "❣️" : "♡"}</Text>
+            <Text
+              style={[
+                styles.chipText,
+                isMenstrual && {
+                  color: theme.colors.warning,
+                  fontWeight: "700",
+                },
+              ]}
+            >
+              Estou em período menstrual
+            </Text>
+          </TouchableOpacity>
         </View>
 
         {/* Selecionar humor */}

@@ -22,7 +22,6 @@ import * as Sharing from "expo-sharing";
 const { width } = Dimensions.get("window");
 const CARD_RADIUS = 20;
 
-// Helpers locais
 type StatCardProps = {
   icon: keyof typeof Ionicons.glyphMap;
   label: string;
@@ -112,6 +111,7 @@ export default function StatsScreen() {
     climateInsights,
     seasonInsights,
     activityLevels,
+    menstrualStats, // ⭐ NOVO
   } = useStats();
 
   const fade = useRef(new Animated.Value(0)).current;
@@ -126,7 +126,7 @@ export default function StatsScreen() {
   }, [fade]);
 
   // -----------------------------------------------------------
-  // PDF — relatório delicado e analítico
+  // PDF
   // -----------------------------------------------------------
   const handleExportPDF = async () => {
     try {
@@ -144,12 +144,10 @@ export default function StatsScreen() {
       const moodAvg = stats?.moodAverage ?? 0;
       const moodNome = moodScoreToName(moodAvg);
 
-      // Atividade diária/semanal/mensal (já normalizada em useStats)
       const dailyPct = activityLevels.relative.daily;
       const weeklyPct = activityLevels.relative.weekly;
       const monthlyPct = activityLevels.relative.monthly;
 
-      // Qual período está com maior ritmo de atividade
       const dominantActivity = (() => {
         const { daily, weekly, monthly } = activityLevels.raw;
         if (daily >= weekly && daily >= monthly) return "diário";
@@ -157,7 +155,7 @@ export default function StatsScreen() {
         return "mensal";
       })();
 
-      // Texto de clima
+      // Texto clima
       let climaTexto = "";
       if (!climateInsights || climateInsights.climates.length === 0) {
         climaTexto =
@@ -189,7 +187,7 @@ export default function StatsScreen() {
         climaTexto = partes.join(" ");
       }
 
-      // Texto de estação
+      // Texto estação
       let estacaoTexto = "";
       if (!seasonInsights || seasonInsights.seasons.length === 0) {
         estacaoTexto =
@@ -202,7 +200,7 @@ export default function StatsScreen() {
         estacaoTexto = `No recorte atual, a estação que mais aparece nos seus registros é o ${label}. Nela, o seu humor médio tende a ser percebido como ${humorEstacao}. Isso não significa que a estação determina como você se sente, mas indica um pano de fundo que influencia o tom dos seus dias.`;
       }
 
-      // Texto sobre ritmo de atividade
+      // Texto ritmo
       let ritmoTexto = "";
       if (!statsDaily && !statsWeekly && !statsMonthly) {
         ritmoTexto =
@@ -220,7 +218,51 @@ export default function StatsScreen() {
         }
       }
 
-      // Cores do tema aplicadas no PDF
+      // ⭐ Texto ciclo menstrual
+      let cicloTexto = "";
+      const menstrualPercent =
+        menstrualStats && menstrualStats.trackedDays > 0
+          ? ((menstrualStats.menstrualDays / menstrualStats.trackedDays) * 100)
+          : 0;
+
+      if (!menstrualStats) {
+        cicloTexto =
+          "Você ainda não marcou seus registros como período menstrual com frequência suficiente para uma leitura específica. Sempre que fizer sentido para você, indicar esses dias ajuda a separar o que é efeito do ciclo e o que é do contexto ao redor.";
+      } else {
+        const diff = menstrualStats.diff;
+        let tomComparativo = "";
+
+        if (diff <= -0.3) {
+          tomComparativo =
+            "Nos dias em período menstrual, o seu humor costuma ficar um pouco mais fragilizado em relação aos outros dias.";
+        } else if (diff >= 0.3) {
+          tomComparativo =
+            "Curiosamente, nos dias em período menstrual o seu humor tende a ficar levemente mais estável ou até mais positivo do que nos demais dias.";
+        } else {
+          tomComparativo =
+            "A diferença entre o humor em dias menstruais e não menstruais é pequena, sugerindo que o ciclo influencia, mas não domina o tom dos seus dias.";
+        }
+
+        cicloTexto = [
+          `Neste recorte, você registrou aproximadamente ${
+            menstrualStats.menstrualDays
+          } dia(s) em período menstrual, o que representa cerca de ${menstrualPercent.toFixed(
+            1
+          )}% dos dias acompanhados.`,
+          `Nesses dias, a média de humor ficou em ${menstrualStats.menstrualAverage.toFixed(
+            2
+          )}, enquanto nos outros dias ficou em ${menstrualStats.nonMenstrualAverage.toFixed(
+            2
+          )}.`,
+          tomComparativo,
+          menstrualStats.cycles > 0
+            ? `Foram identificados cerca de ${menstrualStats.cycles} ciclo(s) acompanhados dentro deste período.`
+            : "",
+        ]
+          .filter(Boolean)
+          .join(" ");
+      }
+
       const primary = colors.primary || "#4C6FFF";
       const accent = colors.secondary || "#7C3AED";
       const textColor = "#1F2933";
@@ -237,7 +279,6 @@ export default function StatsScreen() {
       margin: 0;
       size: A4;
     }
-
     body {
       margin: 40px 42px;
       font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text",
@@ -247,11 +288,7 @@ export default function StatsScreen() {
       line-height: 1.6;
       font-size: 12px;
     }
-
-    h1, h2, h3 {
-      margin: 0;
-    }
-
+    h1, h2, h3 { margin: 0; }
     header {
       display: flex;
       justify-content: space-between;
@@ -260,13 +297,11 @@ export default function StatsScreen() {
       padding-bottom: 10px;
       margin-bottom: 22px;
     }
-
     .brand {
       display: flex;
       flex-direction: column;
       gap: 3px;
     }
-
     .brand-title {
       font-size: 22px;
       font-weight: 700;
@@ -274,18 +309,15 @@ export default function StatsScreen() {
       text-transform: uppercase;
       color: ${primary};
     }
-
     .brand-subtitle {
       font-size: 11px;
       color: #6B7280;
     }
-
     .header-meta {
       text-align: right;
       font-size: 11px;
       color: #6B7280;
     }
-
     .header-meta-title {
       text-transform: uppercase;
       letter-spacing: 0.12em;
@@ -293,12 +325,10 @@ export default function StatsScreen() {
       margin-bottom: 4px;
       color: #374151;
     }
-
     .section {
       margin-bottom: 18px;
       page-break-inside: avoid;
     }
-
     .section-title {
       font-size: 13px;
       text-transform: uppercase;
@@ -307,84 +337,55 @@ export default function StatsScreen() {
       color: #4B5563;
       margin-bottom: 8px;
     }
-
-    .pill {
-      display: inline-flex;
-      align-items: center;
-      border-radius: 999px;
-      border: 1px solid ${borderSoft};
-      padding: 3px 10px;
-      font-size: 10px;
-      color: #6B7280;
-      gap: 6px;
-    }
-
-    .pill-dot {
-      width: 8px;
-      height: 8px;
-      border-radius: 999px;
-      background: ${primary};
-    }
-
     .grid-2 {
       display: grid;
       grid-template-columns: 1fr 1fr;
       gap: 10px;
     }
-
     .card {
       border-radius: 12px;
       border: 1px solid ${borderSoft};
       background: ${softBg};
       padding: 10px 12px;
     }
-
     .card-title {
       font-size: 12px;
       font-weight: 600;
       margin-bottom: 6px;
       color: #374151;
     }
-
     .metric-row {
       display: flex;
       justify-content: space-between;
       align-items: baseline;
       margin-bottom: 2px;
     }
-
     .metric-label {
       font-size: 11px;
       color: #6B7280;
     }
-
     .metric-value {
       font-size: 13px;
       font-weight: 600;
       color: #111827;
     }
-
     .metric-small {
       font-size: 10px;
       color: #6B7280;
     }
-
     .paragraph {
       font-size: 11px;
       color: #374151;
     }
-
     .muted {
       color: #6B7280;
     }
-
     .bar-group {
       margin-top: 6px;
       display: flex;
       flex-direction: column;
       gap: 6px;
     }
-
     .bar-row {
       display: flex;
       align-items: center;
@@ -392,12 +393,10 @@ export default function StatsScreen() {
       font-size: 10px;
       color: #4B5563;
     }
-
     .bar-label {
       width: 52px;
       text-align: right;
     }
-
     .bar-track {
       flex: 1;
       height: 7px;
@@ -405,27 +404,23 @@ export default function StatsScreen() {
       background: #E5E7EB;
       overflow: hidden;
     }
-
     .bar-fill {
       height: 100%;
       border-radius: 999px;
       background: linear-gradient(90deg, ${primary}, ${accent});
     }
-
     .bar-value {
       width: 40px;
       text-align: left;
       font-weight: 600;
       color: #374151;
     }
-
     .chip-row {
       display: flex;
       flex-wrap: wrap;
       gap: 6px;
       margin-top: 4px;
     }
-
     .chip {
       border-radius: 999px;
       border: 1px solid ${borderSoft};
@@ -436,11 +431,9 @@ export default function StatsScreen() {
       align-items: center;
       gap: 4px;
     }
-
     .chip-emoji {
       font-size: 11px;
     }
-
     footer {
       margin-top: 22px;
       padding-top: 8px;
@@ -449,7 +442,6 @@ export default function StatsScreen() {
       color: #9CA3AF;
       text-align: center;
     }
-
     .page-break {
       page-break-before: always;
       margin-top: 24px;
@@ -554,10 +546,10 @@ export default function StatsScreen() {
     </div>
   </section>
 
-  <!-- Quebra de página para a parte de clima -->
+  <!-- Quebra de página -->
   <div class="page-break"></div>
 
-  <!-- Seção 3: Clima e humor -->
+  <!-- Seção 3: Clima -->
   <section class="section">
     <div class="section-title">Clima e o tom dos seus dias</div>
     <div class="card">
@@ -569,26 +561,11 @@ export default function StatsScreen() {
       </div>
 
       <div class="chip-row">
-        <div class="chip">
-          <span class="chip-emoji">☀️</span>
-          <span>Ensolarado</span>
-        </div>
-        <div class="chip">
-          <span class="chip-emoji">☁️</span>
-          <span>Nublado</span>
-        </div>
-        <div class="chip">
-          <span class="chip-emoji">🌧️</span>
-          <span>Chuvoso</span>
-        </div>
-        <div class="chip">
-          <span class="chip-emoji">❄️</span>
-          <span>Frio</span>
-        </div>
-        <div class="chip">
-          <span class="chip-emoji">🔥</span>
-          <span>Quente</span>
-        </div>
+        <div class="chip"><span class="chip-emoji">☀️</span><span>Ensolarado</span></div>
+        <div class="chip"><span class="chip-emoji">☁️</span><span>Nublado</span></div>
+        <div class="chip"><span class="chip-emoji">🌧️</span><span>Chuvoso</span></div>
+        <div class="chip"><span class="chip-emoji">❄️</span><span>Frio</span></div>
+        <div class="chip"><span class="chip-emoji">🔥</span><span>Quente</span></div>
       </div>
 
       <p class="paragraph" style="margin-top: 8px;">
@@ -597,7 +574,7 @@ export default function StatsScreen() {
     </div>
   </section>
 
-  <!-- Seção 4: Estação do ano -->
+  <!-- Seção 4: Estação -->
   <section class="section">
     <div class="section-title">Estação do ano como pano de fundo</div>
     <div class="card">
@@ -615,7 +592,26 @@ export default function StatsScreen() {
     </div>
   </section>
 
-  <!-- Seção 5: Resumo integrativo -->
+  <!-- Seção 5: Ciclo menstrual e humor -->
+  <section class="section">
+    <div class="section-title">Ciclo menstrual e humor</div>
+    <div class="card">
+      <p class="paragraph">
+        ${cicloTexto}
+      </p>
+      ${
+        menstrualStats
+          ? `<p class="paragraph muted" style="margin-top: 6px;">
+              Estes dados sobre o ciclo não servem para culpabilizar o corpo, mas para
+              diferenciar o que é variação hormonal do que é sobrecarga externa, rotina,
+              sono, relações e contexto.
+            </p>`
+          : ""
+      }
+    </div>
+  </section>
+
+  <!-- Seção 6: Resumo integrativo -->
   <section class="section">
     <div class="section-title">Resumo integrado</div>
     <div class="card">
@@ -663,8 +659,26 @@ export default function StatsScreen() {
   };
 
   // -----------------------------------------------------------
-  // UI principal (a parte visual do app, que você já tinha)
+  // UI principal
   // -----------------------------------------------------------
+  const menstrualCardText =
+    !menstrualStats
+      ? "Quando você marcar alguns registros como período menstrual, esse espaço passa a mostrar o impacto do ciclo no humor."
+      : `Você registrou ${menstrualStats.menstrualDays} dia(s) em período menstrual neste recorte. Nesses dias, a média de humor foi ${menstrualStats.menstrualAverage.toFixed(
+          2
+        )} (vs. ${menstrualStats.nonMenstrualAverage.toFixed(
+          2
+        )} nos outros dias).`;
+
+  const menstrualDiffLabel =
+    menstrualStats && Math.abs(menstrualStats.diff) >= 0.3
+      ? menstrualStats.diff < 0
+        ? "Tendência a ficar mais sensível em período menstrual."
+        : "Tendência a se manter até mais estável em período menstrual."
+      : menstrualStats
+      ? "Diferença pequena entre dias menstruais e não menstruais."
+      : "";
+
   return (
     <SafeAreaView
       style={[styles.safe, { backgroundColor: colors.background }]}
@@ -744,10 +758,10 @@ export default function StatsScreen() {
                 size={22}
                 color={colors.primary}
               />
-              <Text style={[styles.cardTitle, { color: colors.text }]}>
-                Taxas de conclusão
-              </Text>
             </View>
+            <Text style={[styles.cardTitle, { color: colors.text }]}>
+              Taxas de conclusão
+            </Text>
 
             <View style={styles.ratesContainer}>
               <RateRow
@@ -771,7 +785,54 @@ export default function StatsScreen() {
             </View>
           </View>
 
-          {/* Card: Resumo textual (curto) */}
+          {/* Card: Ciclo menstrual */}
+          <View style={[styles.card, { backgroundColor: colors.surface }]}>
+            <View style={styles.cardHeader}>
+              <Ionicons
+                name="female-outline"
+                size={22}
+                color={colors.warning}
+              />
+              <Text style={[styles.cardTitle, { color: colors.text }]}>
+                Ciclo menstrual e humor
+              </Text>
+            </View>
+            <Text style={[styles.sub, { color: colors.textSecondary }]}>
+              {menstrualCardText}
+            </Text>
+            {menstrualStats && (
+              <View style={{ marginTop: 10, gap: 4 }}>
+                <Text
+                  style={{
+                    color: colors.textSecondary,
+                    fontSize: 13,
+                  }}
+                >
+                  Diferença média: {menstrualStats.diff.toFixed(2)} ponto(s) na escala de humor.
+                </Text>
+                {menstrualDiffLabel ? (
+                  <Text
+                    style={{
+                      color: colors.textSecondary,
+                      fontSize: 13,
+                    }}
+                  >
+                    {menstrualDiffLabel}
+                  </Text>
+                ) : null}
+                <Text
+                  style={{
+                    color: colors.textSecondary,
+                    fontSize: 13,
+                  }}
+                >
+                  Ciclos acompanhados (estimativa): {menstrualStats.cycles}
+                </Text>
+              </View>
+            )}
+          </View>
+
+          {/* Card: Resumo textual curto */}
           <View style={[styles.card, { backgroundColor: colors.surface }]}>
             <View style={styles.cardHeader}>
               <Ionicons
@@ -878,7 +939,10 @@ const RateRow: React.FC<RateRowProps> = ({
         <View
           style={[
             styles.rateBarFill,
-            { width: `${Math.max(0, Math.min(100, value))}%`, backgroundColor: color },
+            {
+              width: `${Math.max(0, Math.min(100, value))}%`,
+              backgroundColor: color,
+            },
           ]}
         />
       </View>
@@ -965,7 +1029,7 @@ const styles = StyleSheet.create({
   cardHeader: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: 12,
+    marginBottom: 8,
     gap: 10,
   },
   cardTitle: {

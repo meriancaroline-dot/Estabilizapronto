@@ -30,7 +30,18 @@ type SeasonInsights = {
   }[];
 };
 
-// Mapas de rótulos (texto amigável)
+// ⭐ NOVO — análise de ciclo menstrual
+type MenstrualInsights = {
+  menstrualDays: number;
+  trackedDays: number;
+  menstrualEntries: number;
+  nonMenstrualEntries: number;
+  menstrualAverage: number;
+  nonMenstrualAverage: number;
+  diff: number; // menstrual - não menstrual
+  cycles: number;
+};
+
 const CLIMATE_LABELS: Record<
   NonNullable<MoodEntry["climate"]>,
   string
@@ -52,7 +63,6 @@ const SEASON_LABELS: Record<
   primavera: "primavera",
 };
 
-// Converte média numérica de humor em nome qualitativo
 function moodScoreToName(score: number): string {
   if (score >= 4.5) return "muito leve e positivo";
   if (score >= 3.8) return "positivo";
@@ -63,8 +73,7 @@ function moodScoreToName(score: number): string {
 }
 
 // -------------------------------------------------------------
-// Hook principal — estatísticas globais, diárias, semanais e mensais
-// + análise de clima/estação
+// Hook principal
 // -------------------------------------------------------------
 export function useStats() {
   const { habits } = useHabits();
@@ -89,9 +98,6 @@ export function useStats() {
   const [statsWeekly, setStatsWeekly] = useState<AppStats | null>(null);
   const [statsMonthly, setStatsMonthly] = useState<AppStats | null>(null);
 
-  // -----------------------------------------------------------
-  // Função auxiliar: filtra dados por número de dias
-  // -----------------------------------------------------------
   const filterByDays = (arr: any[], days: number): any[] => {
     const now = new Date();
     const limit = new Date(now.getTime() - days * 86400000);
@@ -125,8 +131,7 @@ export function useStats() {
       moods.length > 0
         ? Number(
             (
-              moods.reduce((sum, m) => sum + (m.rating ?? 0), 0) /
-              moods.length
+              moods.reduce((sum, m) => sum + (m.rating ?? 0), 0) / moods.length
             ).toFixed(2)
           )
         : 0;
@@ -209,9 +214,7 @@ export function useStats() {
     const weeklyMoods = filterByDays(moods, 7) as MoodEntry[];
     const monthlyMoods = filterByDays(moods, 30) as MoodEntry[];
 
-    setStatsDaily(
-      compute(dailyReminders, dailyTasks, dailyHabits, dailyMoods)
-    );
+    setStatsDaily(compute(dailyReminders, dailyTasks, dailyHabits, dailyMoods));
     setStatsWeekly(
       compute(weeklyReminders, weeklyTasks, weeklyHabits, weeklyMoods)
     );
@@ -263,7 +266,7 @@ export function useStats() {
   }, [completionRates, stats]);
 
   // -----------------------------------------------------------
-  // Comparativo semanal x mensal (percentual)
+  // Comparativo semanal x mensal
   // -----------------------------------------------------------
   const comparison = useMemo(() => {
     if (!statsWeekly || !statsMonthly) return null;
@@ -375,7 +378,77 @@ export function useStats() {
   }, [moods]);
 
   // -----------------------------------------------------------
-  // Auxiliar para PDF: ritmo de atividade (tarefas+lembretes+hábitos)
+  // 🔥 Análise de ciclo menstrual
+  // -----------------------------------------------------------
+  const menstrualStats = useMemo<MenstrualInsights | null>(() => {
+    const menstrual = moods.filter((m) => m.isMenstrual);
+    if (!moods.length) return null;
+    if (!menstrual.length) return null;
+
+    const nonMenstrual = moods.filter((m) => !m.isMenstrual);
+
+    const menstrualAvg =
+      menstrual.length > 0
+        ? Number(
+            (
+              menstrual.reduce((s, m) => s + (m.rating ?? 0), 0) /
+              menstrual.length
+            ).toFixed(2)
+          )
+        : 0;
+
+    const nonMenstrualAvg =
+      nonMenstrual.length > 0
+        ? Number(
+            (
+              nonMenstrual.reduce((s, m) => s + (m.rating ?? 0), 0) /
+              nonMenstrual.length
+            ).toFixed(2)
+          )
+        : 0;
+
+    const diff = Number((menstrualAvg - nonMenstrualAvg).toFixed(2));
+
+    const menstrualDates = Array.from(
+      new Set(menstrual.map((m) => m.date))
+    ).sort();
+
+    const trackedDates = new Set(moods.map((m) => m.date));
+
+    // ciclos = blocos de dias menstruais consecutivos
+    let cycles = 0;
+    let last: string | null = null;
+
+    for (const d of menstrualDates) {
+      if (!last) {
+        cycles = 1;
+        last = d;
+        continue;
+      }
+      const prev = new Date(last);
+      const curr = new Date(d);
+      const diffDays =
+        (curr.getTime() - prev.getTime()) / (1000 * 60 * 60 * 24);
+      if (diffDays > 1) {
+        cycles += 1;
+      }
+      last = d;
+    }
+
+    return {
+      menstrualDays: menstrualDates.length,
+      trackedDays: trackedDates.size,
+      menstrualEntries: menstrual.length,
+      nonMenstrualEntries: nonMenstrual.length,
+      menstrualAverage: menstrualAvg,
+      nonMenstrualAverage: nonMenstrualAvg,
+      diff,
+      cycles,
+    };
+  }, [moods]);
+
+  // -----------------------------------------------------------
+  // Ritmo de atividade
   // -----------------------------------------------------------
   const activityLevels = useMemo(() => {
     const calc = (s: AppStats | null): number => {
@@ -413,5 +486,6 @@ export function useStats() {
     climateInsights,
     seasonInsights,
     activityLevels,
+    menstrualStats, // ⭐ NOVO
   };
 }

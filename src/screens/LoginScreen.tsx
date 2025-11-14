@@ -15,10 +15,13 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useTheme } from "@/hooks/useTheme";
 import { useUser } from "@/contexts/UserContext";
 import { useNavigation } from "@react-navigation/native";
-import { handleError } from "@/utils/errorHandler"; // ✅ NOVO
+import { handleError } from "@/utils/errorHandler";
+
+const REMEMBER_ME_KEY = "@estabiliza:rememberMe";
 
 export default function LoginScreen() {
   const { theme } = useTheme();
@@ -32,7 +35,10 @@ export default function LoginScreen() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [rememberMe, setRememberMe] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
+  // Animations
   useEffect(() => {
     Animated.parallel([
       Animated.timing(fadeAnim, {
@@ -50,7 +56,26 @@ export default function LoginScreen() {
     ]).start();
   }, []);
 
-  // ✅ ATUALIZADO COM TRATAMENTO DE ERROS
+  // Load remember me
+  useEffect(() => {
+    const loadRememberMe = async () => {
+      try {
+        const stored = await AsyncStorage.getItem(REMEMBER_ME_KEY);
+        if (stored) {
+          const parsed = JSON.parse(stored);
+          if (parsed?.remember && parsed?.email) {
+            setRememberMe(true);
+            setEmail(parsed.email);
+          }
+        }
+      } catch (error) {
+        console.warn("Erro ao carregar rememberMe:", error);
+      }
+    };
+
+    loadRememberMe();
+  }, []);
+
   const handleLogin = async () => {
     if (!email || !password) {
       Alert.alert("Ops!", "Preencha todos os campos.");
@@ -60,9 +85,21 @@ export default function LoginScreen() {
     try {
       setLoading(true);
       await login(email.trim(), password.trim());
-      // Sucesso - navegação automática pelo UserContext
+
+      // Remember me save/remove
+      if (rememberMe) {
+        await AsyncStorage.setItem(
+          REMEMBER_ME_KEY,
+          JSON.stringify({
+            remember: true,
+            email: email.trim(),
+          })
+        );
+      } else {
+        await AsyncStorage.removeItem(REMEMBER_ME_KEY);
+      }
     } catch (error) {
-      handleError(error, 'LoginScreen.handleLogin');
+      handleError(error, "LoginScreen.handleLogin");
     } finally {
       setLoading(false);
     }
@@ -104,8 +141,13 @@ export default function LoginScreen() {
               { backgroundColor: colors.surface, borderColor: colors.border },
             ]}
           >
+            {/* E-mail */}
             <View style={styles.inputGroup}>
-              <Ionicons name="mail-outline" size={18} color={colors.textSecondary} />
+              <Ionicons
+                name="mail-outline"
+                size={18}
+                color={colors.textSecondary}
+              />
               <TextInput
                 style={[styles.input, { color: colors.text }]}
                 placeholder="E-mail"
@@ -117,18 +159,61 @@ export default function LoginScreen() {
               />
             </View>
 
+            {/* Senha */}
             <View style={styles.inputGroup}>
-              <Ionicons name="lock-closed-outline" size={18} color={colors.textSecondary} />
+              <Ionicons
+                name="lock-closed-outline"
+                size={18}
+                color={colors.textSecondary}
+              />
               <TextInput
                 style={[styles.input, { color: colors.text }]}
                 placeholder="Senha"
                 placeholderTextColor={colors.textSecondary}
                 value={password}
                 onChangeText={setPassword}
-                secureTextEntry
+                secureTextEntry={!showPassword}
               />
+              <TouchableOpacity
+                onPress={() => setShowPassword((prev) => !prev)}
+                activeOpacity={0.7}
+              >
+                <Ionicons
+                  name={showPassword ? "eye-off-outline" : "eye-outline"}
+                  size={18}
+                  color={colors.textSecondary}
+                />
+              </TouchableOpacity>
             </View>
 
+            {/* Remember me + Forgot Password */}
+            <View style={styles.rowBetween}>
+              <TouchableOpacity
+                style={styles.rememberMeContainer}
+                onPress={() => setRememberMe((prev) => !prev)}
+                activeOpacity={0.7}
+              >
+                <Ionicons
+                  name={rememberMe ? "checkbox-outline" : "square-outline"}
+                  size={18}
+                  color={colors.textSecondary}
+                />
+                <Text style={[styles.rememberText, { color: colors.textSecondary }]}>
+                  Lembrar e-mail
+                </Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                onPress={handleForgotPassword}
+                activeOpacity={0.7}
+              >
+                <Text style={[styles.linkForgot, { color: colors.primary }]}>
+                  Esqueceu sua senha?
+                </Text>
+              </TouchableOpacity>
+            </View>
+
+            {/* Botão Entrar */}
             <TouchableOpacity
               style={[
                 styles.button,
@@ -143,15 +228,7 @@ export default function LoginScreen() {
               </Text>
             </TouchableOpacity>
 
-            <TouchableOpacity
-              onPress={handleForgotPassword}
-              activeOpacity={0.7}
-            >
-              <Text style={[styles.linkForgot, { color: colors.primary }]}>
-                Esqueceu sua senha?
-              </Text>
-            </TouchableOpacity>
-
+            {/* Criar conta */}
             <TouchableOpacity
               onPress={handleNavigateRegister}
               activeOpacity={0.7}
@@ -203,11 +280,25 @@ const styles = StyleSheet.create({
     borderColor: "#ddd",
     paddingBottom: 8,
     marginBottom: 20,
+    gap: 10,
   },
   input: {
     flex: 1,
     fontSize: 15,
-    marginLeft: 10,
+  },
+  rowBetween: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: 10,
+  },
+  rememberMeContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+  },
+  rememberText: {
+    fontSize: 13,
   },
   button: {
     borderRadius: 16,
@@ -221,14 +312,12 @@ const styles = StyleSheet.create({
     fontWeight: "600",
   },
   linkForgot: {
-    textAlign: "center",
-    marginTop: 14,
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: "500",
   },
   link: {
     textAlign: "center",
-    marginTop: 12,
+    marginTop: 16,
     fontSize: 14,
   },
 });

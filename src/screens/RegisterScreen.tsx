@@ -36,6 +36,10 @@ export default function RegisterScreen() {
   const [confirm, setConfirm] = useState("");
   const [loading, setLoading] = useState(false);
 
+  // Mostrar/ocultar senha
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
+
   useEffect(() => {
     Animated.parallel([
       Animated.timing(fadeAnim, {
@@ -63,15 +67,17 @@ export default function RegisterScreen() {
       return;
     }
 
-    setLoading(true);
-    const success = await register(name.trim(), email.trim(), password.trim());
-    setLoading(false);
-
-    if (success) {
-      Alert.alert("Sucesso", "Conta criada com sucesso!");
-      navigation.navigate("Dashboard");
-    } else {
-      Alert.alert("Erro", "Esse e-mail já está cadastrado.");
+    try {
+      setLoading(true);
+      const success = await register(name.trim(), email.trim(), password.trim());
+      if (success) {
+        Alert.alert("Sucesso", "Conta criada com sucesso!");
+        navigation.navigate("Dashboard");
+      } else {
+        Alert.alert("Erro", "Esse e-mail já está cadastrado.");
+      }
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -107,8 +113,13 @@ export default function RegisterScreen() {
               { backgroundColor: colors.surface, borderColor: colors.border },
             ]}
           >
+            {/* Nome */}
             <View style={styles.inputGroup}>
-              <Ionicons name="person-outline" size={18} color={colors.textSecondary} />
+              <Ionicons
+                name="person-outline"
+                size={18}
+                color={colors.textSecondary}
+              />
               <TextInput
                 style={[styles.input, { color: colors.text }]}
                 placeholder="Nome completo"
@@ -118,8 +129,13 @@ export default function RegisterScreen() {
               />
             </View>
 
+            {/* Email */}
             <View style={styles.inputGroup}>
-              <Ionicons name="mail-outline" size={18} color={colors.textSecondary} />
+              <Ionicons
+                name="mail-outline"
+                size={18}
+                color={colors.textSecondary}
+              />
               <TextInput
                 style={[styles.input, { color: colors.text }]}
                 placeholder="E-mail"
@@ -131,30 +147,61 @@ export default function RegisterScreen() {
               />
             </View>
 
+            {/* Senha */}
             <View style={styles.inputGroup}>
-              <Ionicons name="lock-closed-outline" size={18} color={colors.textSecondary} />
+              <Ionicons
+                name="lock-closed-outline"
+                size={18}
+                color={colors.textSecondary}
+              />
               <TextInput
                 style={[styles.input, { color: colors.text }]}
                 placeholder="Senha"
                 placeholderTextColor={colors.textSecondary}
                 value={password}
                 onChangeText={setPassword}
-                secureTextEntry
+                secureTextEntry={!showPassword}
               />
+              <TouchableOpacity
+                onPress={() => setShowPassword((prev) => !prev)}
+                activeOpacity={0.7}
+              >
+                <Ionicons
+                  name={showPassword ? "eye-off-outline" : "eye-outline"}
+                  size={20}
+                  color={colors.textSecondary}
+                />
+              </TouchableOpacity>
             </View>
 
+            {/* Confirmar Senha */}
             <View style={styles.inputGroup}>
-              <Ionicons name="lock-closed-outline" size={18} color={colors.textSecondary} />
+              <Ionicons
+                name="lock-closed-outline"
+                size={18}
+                color={colors.textSecondary}
+              />
               <TextInput
                 style={[styles.input, { color: colors.text }]}
                 placeholder="Confirmar senha"
                 placeholderTextColor={colors.textSecondary}
                 value={confirm}
                 onChangeText={setConfirm}
-                secureTextEntry
+                secureTextEntry={!showConfirm}
               />
+              <TouchableOpacity
+                onPress={() => setShowConfirm((prev) => !prev)}
+                activeOpacity={0.7}
+              >
+                <Ionicons
+                  name={showConfirm ? "eye-off-outline" : "eye-outline"}
+                  size={20}
+                  color={colors.textSecondary}
+                />
+              </TouchableOpacity>
             </View>
 
+            {/* Botão cadastrar */}
             <TouchableOpacity
               style={[
                 styles.button,
@@ -169,6 +216,7 @@ export default function RegisterScreen() {
               </Text>
             </TouchableOpacity>
 
+            {/* Voltar */}
             <TouchableOpacity onPress={handleNavigateLogin} activeOpacity={0.7}>
               <Text style={[styles.link, { color: colors.textSecondary }]}>
                 Voltar ao login
@@ -217,11 +265,11 @@ const styles = StyleSheet.create({
     borderColor: "#ddd",
     paddingBottom: 8,
     marginBottom: 20,
+    gap: 10,
   },
   input: {
     flex: 1,
     fontSize: 15,
-    marginLeft: 10,
   },
   button: {
     borderRadius: 16,

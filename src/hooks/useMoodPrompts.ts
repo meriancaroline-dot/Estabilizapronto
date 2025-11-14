@@ -1,3 +1,6 @@
+// -------------------------------------------------------------
+// src/hooks/useMoodPrompts.ts
+// -------------------------------------------------------------
 import { useEffect } from "react";
 import * as Notifications from "expo-notifications";
 
@@ -7,7 +10,7 @@ export function useMoodPrompts() {
       const scheduled = await Notifications.getAllScheduledNotificationsAsync();
 
       const alreadyScheduled = scheduled.some(
-        (n) => n.content?.title?.includes("Como você está se sentindo?") // ✅ corrigido
+        (n) => n.content?.title?.includes("Como você está se sentindo?")
       );
       if (alreadyScheduled) return;
 
@@ -22,7 +25,7 @@ export function useMoodPrompts() {
           content: {
             title: "Como você está se sentindo?",
             body: `Registre seu humor ${label}.`,
-            sound: true,
+            // 🔇 nada de som aqui
           },
           trigger: {
             type: Notifications.SchedulableTriggerInputTypes.DAILY,
@@ -32,7 +35,7 @@ export function useMoodPrompts() {
         });
       }
 
-      console.log("🕒 Lembretes diários de humor agendados.");
+      console.log("🕒 Lembretes diários de humor agendados (sem som).");
     })();
   }, []);
 }

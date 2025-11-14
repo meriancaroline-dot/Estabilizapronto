@@ -28,13 +28,19 @@ export type RootStackParamList = {
   HabitDetails?: { id: string };
   NoteDetails?: { id: string };
 
+  // ⭐ Telas de parceiros (NOVAS)
+  PartnersScreen: undefined;
+  PartnerDetail: { partner: any }; // ← OBRIGATÓRIO para funcionar
+  CrisisScreen: undefined;
+
+
   // Fluxos futuros
   Onboarding?: undefined;
 
   // 🧩 Telas de autenticação
   Login?: undefined;
   Register?: undefined;
-  ForgotPassword?: undefined; // ✅ Tela de recuperação de senha
+  ForgotPassword?: undefined;
 };
 
 // -------------------------------------------------------------
@@ -54,7 +60,7 @@ export type ProfileStackParamList = {
   ProfileHome: undefined;
   EditProfile: undefined;
   Achievements: undefined; // Conquistas dentro do perfil
-  Settings: undefined; // ✅ Nova tela de Configurações dentro do Perfil
+  Settings: undefined;     // Tela de Configurações dentro do Perfil
 };
 
 // -------------------------------------------------------------
