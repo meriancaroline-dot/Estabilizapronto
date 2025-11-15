@@ -11,7 +11,8 @@ import { User, UserPreferences } from "@/types/models";
 const STORAGE_KEY = "@estabiliza:user";
 
 export function useUser() {
-  const { user, updateUser, logout, refreshUser, isLoggedIn } = useUserContext();
+  const { user, updateUser, logout, refreshUser, isLoggedIn } =
+    useUserContext();
 
   const patchUser = useCallback(
     async (data: Partial<User>) => {
@@ -39,6 +40,15 @@ export function useUser() {
           preferences: safePreferences,
           createdAt: user?.createdAt ?? new Date().toISOString(),
           updatedAt: new Date().toISOString(),
+
+          // 🔥 novos campos de perfil
+          gender: data.gender ?? user?.gender,
+          emergencyContactName:
+            data.emergencyContactName ?? user?.emergencyContactName,
+          emergencyContactPhone:
+            data.emergencyContactPhone ?? user?.emergencyContactPhone,
+          emergencyContactRelation:
+            data.emergencyContactRelation ?? user?.emergencyContactRelation,
         };
 
         await updateUser(newUser);

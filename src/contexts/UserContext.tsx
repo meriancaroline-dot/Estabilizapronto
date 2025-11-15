@@ -31,6 +31,7 @@ export interface UserPreferences {
   dailyReminderTime?: string;
 }
 
+// ⚠️ Aqui adicionamos gênero e contato de emergência
 export interface User {
   id: string;
   name: string;
@@ -38,6 +39,20 @@ export interface User {
   avatar?: string;
   preferences: UserPreferences;
   createdAt: string;
+  updatedAt?: string;
+
+  // Personalização de tratamento
+  gender?:
+    | "female"
+    | "male"
+    | "non_binary"
+    | "other"
+    | "prefer_not_to_say";
+
+  // Contato de emergência
+  emergencyContactName?: string;
+  emergencyContactPhone?: string;
+  emergencyContactRelation?: string;
 }
 
 interface UserContextData {
@@ -60,7 +75,9 @@ const UserContext = createContext<UserContextData | undefined>(undefined);
 // -----------------------------
 // Provider
 // -----------------------------
-export const UserProvider: React.FC<React.PropsWithChildren> = ({ children }) => {
+export const UserProvider: React.FC<React.PropsWithChildren> = ({
+  children,
+}) => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -112,8 +129,18 @@ export const UserProvider: React.FC<React.PropsWithChildren> = ({ children }) =>
         name: fbUser.displayName || fbUser.email?.split("@")[0] || "Usuário",
         email: fbUser.email || "sem_email",
         avatar: fbUser.photoURL || undefined,
-        preferences: { themeMode: "system" as const, notificationsEnabled: true },
+        preferences: {
+          themeMode: "system",
+          notificationsEnabled: true,
+        },
         createdAt: fbUser.metadata.creationTime || new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+
+        // campos novos começam undefined
+        gender: undefined,
+        emergencyContactName: undefined,
+        emergencyContactPhone: undefined,
+        emergencyContactRelation: undefined,
       };
 
       setUser(newUser);
@@ -148,9 +175,19 @@ export const UserProvider: React.FC<React.PropsWithChildren> = ({ children }) =>
           id: result.user.uid,
           name: result.user.displayName || email.split("@")[0],
           email: result.user.email || "",
-          preferences: { themeMode: "system" as const, notificationsEnabled: true },
+          avatar: result.user.photoURL || undefined,
+          preferences: {
+            themeMode: "system",
+            notificationsEnabled: true,
+          },
           createdAt:
             result.user.metadata.creationTime || new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+
+          gender: user?.gender,
+          emergencyContactName: user?.emergencyContactName,
+          emergencyContactPhone: user?.emergencyContactPhone,
+          emergencyContactRelation: user?.emergencyContactRelation,
         };
 
         // ✅ Log analytics
@@ -164,7 +201,10 @@ export const UserProvider: React.FC<React.PropsWithChildren> = ({ children }) =>
       } catch (e: any) {
         console.error("Erro no login:", e);
         let msg = "Falha ao realizar login.";
-        if (e.code === "auth/invalid-credential" || e.code === "auth/wrong-password")
+        if (
+          e.code === "auth/invalid-credential" ||
+          e.code === "auth/wrong-password"
+        )
           msg = "Senha incorreta.";
         if (e.code === "auth/user-not-found") msg = "Usuário não encontrado.";
         setError(msg);
@@ -174,7 +214,7 @@ export const UserProvider: React.FC<React.PropsWithChildren> = ({ children }) =>
         setLoading(false);
       }
     },
-    [syncUserWithFirebase]
+    [syncUserWithFirebase, user]
   );
 
   // -----------------------------
@@ -184,7 +224,11 @@ export const UserProvider: React.FC<React.PropsWithChildren> = ({ children }) =>
     async (name: string, email: string, password: string): Promise<User> => {
       try {
         setLoading(true);
-        const result = await createUserWithEmailAndPassword(auth, email, password);
+        const result = await createUserWithEmailAndPassword(
+          auth,
+          email,
+          password
+        );
         if (auth.currentUser)
           await updateProfile(auth.currentUser, { displayName: name });
         await syncUserWithFirebase(result.user);
@@ -193,8 +237,18 @@ export const UserProvider: React.FC<React.PropsWithChildren> = ({ children }) =>
           id: result.user.uid,
           name,
           email,
-          preferences: { themeMode: "system" as const, notificationsEnabled: true },
+          preferences: {
+            themeMode: "system",
+            notificationsEnabled: true,
+          },
+          avatar: result.user.photoURL || undefined,
           createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+
+          gender: undefined,
+          emergencyContactName: undefined,
+          emergencyContactPhone: undefined,
+          emergencyContactRelation: undefined,
         };
 
         // ✅ Log analytics
@@ -246,7 +300,11 @@ export const UserProvider: React.FC<React.PropsWithChildren> = ({ children }) =>
   const updateUser = useCallback(
     async (data: Partial<User>) => {
       if (!user) return;
-      const updated = { ...user, ...data };
+      const updated: User = {
+        ...user,
+        ...data,
+        updatedAt: new Date().toISOString(),
+      };
       setUser(updated);
       await persistUser(updated);
 
@@ -263,9 +321,10 @@ export const UserProvider: React.FC<React.PropsWithChildren> = ({ children }) =>
   const updatePreferences = useCallback(
     async (prefs: Partial<UserPreferences>) => {
       if (!user) return;
-      const updated = {
+      const updated: User = {
         ...user,
         preferences: { ...user.preferences, ...prefs },
+        updatedAt: new Date().toISOString(),
       };
       setUser(updated);
       await persistUser(updated);

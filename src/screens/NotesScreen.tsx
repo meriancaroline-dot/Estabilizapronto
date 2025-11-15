@@ -18,6 +18,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useTheme } from "@/hooks/useTheme";
 import { useNotes } from "@/hooks/useNotes";
 import { Note } from "@/types/models";
+import { gamification } from "@/gamification/GamificationEngine"; // 🔥 GATILHO DE MISSÃO
 
 const { width } = Dimensions.get("window");
 
@@ -58,6 +59,10 @@ export default function NotesScreen() {
           title: trimmedTitle || "Sem título",
           content: trimmedContent,
         });
+
+        // 🔥 conta para a missão "Mente ativa"
+        await gamification.registerEvent("note_created");
+
         Alert.alert("📝 Salvo", "Nova nota adicionada.");
       }
       setTitle("");
@@ -91,12 +96,11 @@ export default function NotesScreen() {
     ]);
   };
 
-  // 🎨 Paleta dos post-its (tons suaves)
   const colorsPalette = ["#FFF5C4", "#FFE0E9", "#DFFFE0", "#DFF4FF", "#FDE9C9"];
 
   const renderNote = ({ item }: { item: Note }) => {
     const bg = colorsPalette[Math.floor(Math.random() * colorsPalette.length)];
-    const rotation = Math.random() * 6 - 3; // -3° a +3°
+    const rotation = Math.random() * 6 - 3;
 
     return (
       <Animated.View
@@ -113,7 +117,9 @@ export default function NotesScreen() {
           style={{ flex: 1 }}
           activeOpacity={0.8}
         >
-          <Text style={[styles.noteTitle, { color: colors.text }]}>{item.title}</Text>
+          <Text style={[styles.noteTitle, { color: colors.text }]}>
+            {item.title}
+          </Text>
           <Text
             style={[styles.noteContent, { color: colors.textSecondary }]}
             numberOfLines={6}
@@ -122,7 +128,10 @@ export default function NotesScreen() {
           </Text>
         </TouchableOpacity>
 
-        <TouchableOpacity onPress={() => handleDelete(item.id)} style={styles.deleteButton}>
+        <TouchableOpacity
+          onPress={() => handleDelete(item.id)}
+          style={styles.deleteButton}
+        >
           <Ionicons name="close" size={16} color="#333" />
         </TouchableOpacity>
       </Animated.View>
@@ -140,19 +149,31 @@ export default function NotesScreen() {
           style={StyleSheet.absoluteFill}
         />
 
-        <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
-          {/* Cabeçalho padrão Estabiliza */}
+        <ScrollView
+          contentContainerStyle={styles.scroll}
+          showsVerticalScrollIndicator={false}
+        >
           <View style={styles.header}>
-            <Text style={[styles.greeting, { color: colors.text }]}>Minhas Notas</Text>
+            <Text style={[styles.greeting, { color: colors.text }]}>
+              Minhas Notas
+            </Text>
             <Text style={[styles.sub, { color: colors.textSecondary }]}>
               Um espaço para soltar os pensamentos
             </Text>
           </View>
 
-          {/* Caixa de criação de nota */}
-          <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+          <View
+            style={[
+              styles.card,
+              { backgroundColor: colors.surface, borderColor: colors.border },
+            ]}
+          >
             <View style={styles.cardHeader}>
-              <Ionicons name="pencil-outline" size={22} color={colors.primary} />
+              <Ionicons
+                name="pencil-outline"
+                size={22}
+                color={colors.primary}
+              />
               <Text style={[styles.cardTitle, { color: colors.text }]}>
                 {editingId ? "Editar nota" : "Nova nota"}
               </Text>
@@ -195,14 +216,17 @@ export default function NotesScreen() {
               style={[styles.saveButton, { backgroundColor: colors.primary }]}
               activeOpacity={0.7}
             >
-              <Ionicons name="checkmark-circle-outline" size={20} color="#FFF" />
+              <Ionicons
+                name="checkmark-circle-outline"
+                size={20}
+                color="#FFF"
+              />
               <Text style={styles.saveButtonText}>
                 {editingId ? "Atualizar" : "Salvar"}
               </Text>
             </TouchableOpacity>
           </View>
 
-          {/* Mural */}
           <View style={styles.mural}>
             <FlatList
               data={[...notes].reverse()}
@@ -215,10 +239,23 @@ export default function NotesScreen() {
           </View>
 
           {notes.length === 0 && (
-            <View style={[styles.emptyState, { backgroundColor: colors.surface }]}>
-              <Ionicons name="document-text-outline" size={48} color={colors.textSecondary} />
-              <Text style={[styles.emptyText, { color: colors.text }]}>Nenhuma nota ainda</Text>
-              <Text style={[styles.emptySubtext, { color: colors.textSecondary }]}>
+            <View
+              style={[
+                styles.emptyState,
+                { backgroundColor: colors.surface },
+              ]}
+            >
+              <Ionicons
+                name="document-text-outline"
+                size={48}
+                color={colors.textSecondary}
+              />
+              <Text style={[styles.emptyText, { color: colors.text }]}>
+                Nenhuma nota ainda
+              </Text>
+              <Text
+                style={[styles.emptySubtext, { color: colors.textSecondary }]}
+              >
                 Comece escrevendo sua primeira nota acima
               </Text>
             </View>
@@ -229,9 +266,6 @@ export default function NotesScreen() {
   );
 }
 
-// -------------------------------------------------------------
-// 💅 Estilos
-// -------------------------------------------------------------
 const CARD_RADIUS = 20;
 
 const styles = StyleSheet.create({
@@ -253,8 +287,6 @@ const styles = StyleSheet.create({
     marginTop: 6,
     fontSize: 14,
   },
-
-  // Caixa de nova nota (estilo harmonioso com o app)
   card: {
     borderRadius: CARD_RADIUS,
     padding: 18,
@@ -300,8 +332,6 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     fontSize: 15,
   },
-
-  // Mural
   mural: {
     flex: 1,
     marginTop: 8,
@@ -336,7 +366,6 @@ const styles = StyleSheet.create({
     borderRadius: 50,
     padding: 4,
   },
-
   emptyState: {
     borderRadius: CARD_RADIUS,
     padding: 40,

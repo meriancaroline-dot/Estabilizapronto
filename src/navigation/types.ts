@@ -28,11 +28,13 @@ export type RootStackParamList = {
   HabitDetails?: { id: string };
   NoteDetails?: { id: string };
 
-  // ⭐ Telas de parceiros (NOVAS)
+  // ⭐ Telas de parceiros
   PartnersScreen: undefined;
-  PartnerDetail: { partner: any }; // ← OBRIGATÓRIO para funcionar
-  CrisisScreen: undefined;
+  PartnerDetail: { partner: any };
 
+  // ⭐ Modo Crise
+  CrisisScreen: undefined;
+  CrisisGames: undefined;   // 👈 ADICIONADO — ESSA ROTA FALTAVA
 
   // Fluxos futuros
   Onboarding?: undefined;
@@ -41,6 +43,9 @@ export type RootStackParamList = {
   Login?: undefined;
   Register?: undefined;
   ForgotPassword?: undefined;
+
+  // ⭐⭐ SUA ADIÇÃO — sem mudar nada
+  WaterTracker: undefined;
 };
 
 // -------------------------------------------------------------

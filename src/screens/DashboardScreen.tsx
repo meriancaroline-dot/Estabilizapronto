@@ -1,3 +1,6 @@
+// -------------------------------------------------------------
+// src/screens/DashboardScreen.tsx
+// -------------------------------------------------------------
 import React, { useEffect, useMemo, useRef } from "react";
 import {
   View,
@@ -29,6 +32,7 @@ export default function DashboardScreen() {
   const { user } = useUser();
 
   const navigation = useNavigation<BottomTabNavigationProp<RootTabParamList>>();
+
   const fade = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
@@ -42,7 +46,6 @@ export default function DashboardScreen() {
 
   const colors = theme.colors;
 
-  // 👤 Saudação dinâmica
   const greeting = useMemo(() => {
     const h = new Date().getHours();
     const name =
@@ -59,24 +62,21 @@ export default function DashboardScreen() {
   const moodEmoji = lastMood?.emoji || "🌿";
 
   const handleShortcutPress = (target: keyof RootTabParamList) => {
-    if (!target) return console.warn("Atalho sem destino definido.");
+    if (!target) return;
     navigation.navigate(target);
   };
 
-  // 👇 Define humor predominante/médio do dia
   const todayMood = useMemo(() => {
     if (!moods.length) return { text: "Equilibrado", emoji: "🌿" };
 
-    // Filtra só os registros de hoje
     const today = new Date().toDateString();
     const todayMoods = moods.filter(
       (m) => new Date(m.date).toDateString() === today
     );
 
-    if (todayMoods.length === 0)
+    if (!todayMoods.length)
       return { text: moodText, emoji: moodEmoji };
 
-    // Conta qual humor mais aparece
     const freq: Record<string, number> = {};
     todayMoods.forEach((m) => {
       freq[m.mood] = (freq[m.mood] || 0) + 1;
@@ -92,8 +92,8 @@ export default function DashboardScreen() {
 
   return (
     <SafeAreaView
-      style={[styles.safe, { backgroundColor: colors.background }]}
       edges={["top", "left", "right"]}
+      style={{ flex: 1, backgroundColor: colors.background }}
     >
       <Animated.View style={[styles.container, { opacity: fade }]}>
         <LinearGradient
@@ -101,43 +101,114 @@ export default function DashboardScreen() {
           style={StyleSheet.absoluteFill}
         />
 
-        <ScrollView
-          contentContainerStyle={styles.scroll}
-          showsVerticalScrollIndicator={false}
-        >
-          {/* Cabeçalho */}
-          <View style={styles.header}>
-            <Text style={[styles.greeting, { color: colors.text }]}>{greeting}</Text>
-            <Text style={[styles.sub, { color: colors.textSecondary }]}>
-              Seu humor atual: {moodText.toLowerCase()} {moodEmoji}
-            </Text>
+        <ScrollView contentContainerStyle={styles.scroll}>
+          {/* Saudação + botão de crise */}
+          <View style={styles.topRow}>
+            <View style={{ flex: 1 }}>
+              <Text style={[styles.greeting, { color: colors.text }]}>
+                {greeting}
+              </Text>
+              <Text style={[styles.sub, { color: colors.textSecondary }]}>
+                Seu humor atual: {moodText.toLowerCase()} {moodEmoji}
+              </Text>
+            </View>
+
+            {/* botão crise no topo */}
+            <TouchableOpacity
+              onPress={() => navigation.getParent()?.navigate("CrisisScreen")}
+              style={[
+                styles.crisisButton,
+                { backgroundColor: colors.surface, borderColor: colors.border },
+              ]}
+            >
+              <Ionicons
+                name="alert-circle-outline"
+                size={20}
+                color={colors.primary}
+              />
+            </TouchableOpacity>
           </View>
 
           {/* Atalhos */}
           <View style={styles.shortcutsGrid}>
+            {/* atalhos originais */}
             {shortcuts.map((item, index) => (
               <TouchableOpacity
                 key={index}
                 onPress={() => handleShortcutPress(item.target)}
                 style={[
                   styles.shortcut,
-                  { backgroundColor: colors.surface, borderColor: colors.border },
+                  {
+                    backgroundColor: colors.surface,
+                    borderColor: colors.border,
+                  },
                 ]}
               >
                 <Ionicons name={item.icon as any} size={22} color={colors.text} />
                 <Text
                   style={[styles.shortcutLabel, { color: colors.textSecondary }]}
-                  numberOfLines={1}
                 >
                   {item.label}
                 </Text>
               </TouchableOpacity>
             ))}
+
+            {/* Água */}
+            <TouchableOpacity
+              onPress={() => navigation.getParent()?.navigate("WaterTracker")}
+              style={[
+                styles.shortcut,
+                {
+                  backgroundColor: colors.surface,
+                  borderColor: colors.border,
+                },
+              ]}
+            >
+              <Ionicons name="water-outline" size={22} color={colors.primary} />
+              <Text style={[styles.shortcutLabel, { color: colors.textSecondary }]}>
+                Água
+              </Text>
+            </TouchableOpacity>
+
+            {/* Modo Crise */}
+            <TouchableOpacity
+              onPress={() => navigation.getParent()?.navigate("CrisisScreen")}
+              style={[
+                styles.shortcut,
+                {
+                  backgroundColor: colors.surface,
+                  borderColor: colors.border,
+                },
+              ]}
+            >
+              <Ionicons name="alert-circle" size={22} color={colors.warning} />
+              <Text style={[styles.shortcutLabel, { color: colors.textSecondary }]}>
+                Crise
+              </Text>
+            </TouchableOpacity>
+
+            {/* Minijogos */}
+            <TouchableOpacity
+              onPress={() => navigation.getParent()?.navigate("CrisisGames")}
+              style={[
+                styles.shortcut,
+                {
+                  backgroundColor: colors.surface,
+                  borderColor: colors.border,
+                },
+              ]}
+            >
+              <Ionicons name="game-controller-outline" size={22} color={colors.success} />
+              <Text style={[styles.shortcutLabel, { color: colors.textSecondary }]}>
+                Jogos
+              </Text>
+            </TouchableOpacity>
+
           </View>
 
-          {/* Cards de resumo minimalistas */}
+          {/* Cards de resumo */}
           <View style={styles.summaryRow}>
-            {[
+            {[ 
               {
                 label: "Desempenho",
                 color: colors.primary,
@@ -153,13 +224,28 @@ export default function DashboardScreen() {
             ].map((item, i) => (
               <View
                 key={i}
-                style={[styles.summaryCard, { backgroundColor: colors.surface }]}
+                style={[
+                  styles.summaryCard,
+                  { backgroundColor: colors.surface },
+                ]}
               >
-                <Ionicons name={item.icon as any} size={20} color={item.color} />
-                <Text style={[styles.summaryLabel, { color: colors.textSecondary }]}>
+                <Ionicons
+                  name={item.icon as any}
+                  size={20}
+                  color={item.color}
+                />
+                <Text
+                  style={[styles.summaryLabel, { color: colors.textSecondary }]}
+                >
                   {item.label}
                 </Text>
-                <View style={[styles.progressBar, { backgroundColor: colors.border }]}>
+
+                <View
+                  style={[
+                    styles.progressBar,
+                    { backgroundColor: colors.border },
+                  ]}
+                >
                   <View
                     style={[
                       styles.progressFill,
@@ -167,16 +253,23 @@ export default function DashboardScreen() {
                     ]}
                   />
                 </View>
+
                 <Text style={[styles.progressText, { color: item.color }]}>
                   {item.value}%
                 </Text>
               </View>
             ))}
 
-            {/* Humor — agora exibe texto + emoji */}
-            <View style={[styles.summaryCard, { backgroundColor: colors.surface }]}>
+            <View
+              style={[
+                styles.summaryCard,
+                { backgroundColor: colors.surface },
+              ]}
+            >
               <Ionicons name="happy-outline" size={20} color={colors.warning} />
-              <Text style={[styles.summaryLabel, { color: colors.textSecondary }]}>
+              <Text
+                style={[styles.summaryLabel, { color: colors.textSecondary }]}
+              >
                 Humor
               </Text>
               <Text style={[styles.moodText, { color: colors.warning }]}>
@@ -185,7 +278,7 @@ export default function DashboardScreen() {
             </View>
           </View>
 
-          {/* Card: O que temos para hoje */}
+          {/* Hoje */}
           <View style={[styles.card, { backgroundColor: colors.surface }]}>
             <Text style={[styles.cardTitle, { color: colors.text }]}>
               O que temos para hoje
@@ -197,9 +290,14 @@ export default function DashboardScreen() {
 
           {/* Dicas */}
           <View style={[styles.card, { backgroundColor: colors.surface }]}>
-            <Text style={[styles.cardTitle, { color: colors.text }]}>Dicas para você</Text>
+            <Text style={[styles.cardTitle, { color: colors.text }]}>
+              Dicas para você
+            </Text>
             {tips.map((t, i) => (
-              <Text key={i} style={[styles.cardText, { color: colors.textSecondary }]}>
+              <Text
+                key={i}
+                style={[styles.cardText, { color: colors.textSecondary }]}
+              >
                 • {t}
               </Text>
             ))}
@@ -210,10 +308,8 @@ export default function DashboardScreen() {
   );
 }
 
-// -------------------------------------------------------------
-// 💅 Estilos
-// -------------------------------------------------------------
 const CARD_RADIUS = 20;
+
 const styles = StyleSheet.create({
   safe: { flex: 1 },
   container: { flex: 1 },
@@ -221,20 +317,24 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingBottom: 140,
   },
-  header: {
+
+  topRow: {
+    flexDirection: "row",
+    alignItems: "center",
     marginTop: 56,
     marginBottom: 26,
   },
-  greeting: {
-    fontSize: 26,
-    fontWeight: "600",
-  },
-  sub: {
-    marginTop: 6,
-    fontSize: 14,
+
+  greeting: { fontSize: 26, fontWeight: "600" },
+  sub: { marginTop: 6, fontSize: 14 },
+
+  crisisButton: {
+    padding: 10,
+    borderRadius: 50,
+    borderWidth: 1,
+    marginLeft: 10,
   },
 
-  // Atalhos
   shortcutsGrid: {
     flexDirection: "row",
     flexWrap: "wrap",
@@ -255,7 +355,6 @@ const styles = StyleSheet.create({
     marginTop: 6,
   },
 
-  // Cards
   summaryRow: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -266,12 +365,9 @@ const styles = StyleSheet.create({
     borderRadius: 18,
     paddingVertical: 14,
     alignItems: "center",
-    justifyContent: "center",
   },
-  summaryLabel: {
-    fontSize: 13,
-    marginTop: 4,
-  },
+  summaryLabel: { fontSize: 13, marginTop: 4 },
+
   progressBar: {
     width: "80%",
     height: 6,
@@ -279,22 +375,11 @@ const styles = StyleSheet.create({
     overflow: "hidden",
     marginTop: 8,
   },
-  progressFill: {
-    height: "100%",
-    borderRadius: 6,
-  },
-  progressText: {
-    fontSize: 12,
-    fontWeight: "600",
-    marginTop: 6,
-  },
-  moodText: {
-    fontSize: 15,
-    fontWeight: "600",
-    marginTop: 8,
-  },
+  progressFill: { height: "100%", borderRadius: 6 },
+  progressText: { fontSize: 12, fontWeight: "600", marginTop: 6 },
 
-  // Cards grandes
+  moodText: { fontSize: 15, fontWeight: "600", marginTop: 8 },
+
   card: {
     borderRadius: CARD_RADIUS,
     padding: 18,

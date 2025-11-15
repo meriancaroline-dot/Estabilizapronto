@@ -16,6 +16,7 @@ import { useTheme } from "@/hooks/useTheme";
 import { useHabits } from "@/hooks/useHabits";
 import { Habit } from "@/types/models";
 import { useWellness } from "@/contexts/WellnessContext";
+import { gamification } from "@/gamification/GamificationEngine"; // 🔥 IMPORTANTE
 
 export default function HabitsScreen() {
   const { theme } = useTheme();
@@ -69,7 +70,7 @@ export default function HabitsScreen() {
           title: title.trim(),
           description: description.trim() || undefined,
           frequency,
-            createdAt: new Date().toISOString(), // ✅ adicionado campo obrigatório
+          createdAt: new Date().toISOString(),
         });
       }
       setVisible(false);
@@ -89,6 +90,9 @@ export default function HabitsScreen() {
   const onComplete = async (h: Habit) => {
     try {
       await completeHabit(h.id);
+
+      await gamification.registerEvent("habit_complete"); // 🔥 AQUI O GATILHO
+
       fadeCard();
     } catch {
       Alert.alert("Erro", "Falha ao completar o hábito.");
@@ -172,8 +176,7 @@ export default function HabitsScreen() {
 
   return (
     <View style={styles.container}>
-      {/* HEADER */}
-      <View style={styles.header}>
+<View style={styles.header}>
         <View>
           <Text style={[styles.title, { color: theme.colors.text }]}>Hábitos</Text>
           <Text style={[styles.subtitle, { color: theme.colors.textSecondary }]}>
@@ -185,7 +188,6 @@ export default function HabitsScreen() {
         </TouchableOpacity>
       </View>
 
-      {/* LISTA */}
       <FlatList
         data={habits}
         keyExtractor={(h) => h.id}
@@ -203,7 +205,6 @@ export default function HabitsScreen() {
         }
       />
 
-      {/* MODAL */}
       <Modal visible={visible} animationType="slide" transparent>
         <View style={styles.modalBackdrop}>
           <View

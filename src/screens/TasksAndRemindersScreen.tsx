@@ -1,11 +1,8 @@
 // src/screens/TasksAndRemindersScreen.tsx
 // -------------------------------------------------------------
 // Tarefas & Lembretes
-// - Dois blocos separados (Tarefas / Lembretes)
-// - Design no padrão da Dash (cards limpos, surface + border)
-// - Lógica de notificação via useReminders/NotificationContext
 // -------------------------------------------------------------
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState } from "react";
 import {
   View,
   Text,
@@ -17,18 +14,19 @@ import {
   Alert,
   Platform,
   KeyboardAvoidingView,
-} from 'react-native';
-import DateTimePicker from '@react-native-community/datetimepicker';
+} from "react-native";
+import DateTimePicker from "@react-native-community/datetimepicker";
 
-import { useTheme } from '@/hooks/useTheme';
-import { useTasks } from '@/hooks/useTasks';
-import { useReminders } from '@/hooks/useReminders';
-import { Task, Reminder } from '@/types/models';
+import { useTheme } from "@/hooks/useTheme";
+import { useTasks } from "@/hooks/useTasks";
+import { useReminders } from "@/hooks/useReminders";
+import { Task, Reminder } from "@/types/models";
 
 export default function TasksAndRemindersScreen() {
   const { theme } = useTheme();
   const { tasks, addTask, deleteTask } = useTasks();
-  const { reminders, addReminder, updateReminder, deleteReminder } = useReminders();
+  const { reminders, addReminder, updateReminder, deleteReminder } =
+    useReminders();
 
   const styles = useMemo(() => createStyles(theme), [theme]);
 
@@ -36,33 +34,33 @@ export default function TasksAndRemindersScreen() {
   // 📌 Tarefas
   // -----------------------------------------------------------
   const [taskModalVisible, setTaskModalVisible] = useState(false);
-  const [taskTitle, setTaskTitle] = useState('');
-  const [taskDescription, setTaskDescription] = useState('');
+  const [taskTitle, setTaskTitle] = useState("");
+  const [taskDescription, setTaskDescription] = useState("");
 
   // -----------------------------------------------------------
   // ⏰ Lembretes
   // -----------------------------------------------------------
   const [remModalVisible, setRemModalVisible] = useState(false);
   const [editingRemId, setEditingRemId] = useState<string | null>(null);
-  const [remTitle, setRemTitle] = useState('');
-  const [remDescription, setRemDescription] = useState('');
+  const [remTitle, setRemTitle] = useState("");
+  const [remDescription, setRemDescription] = useState("");
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [showTimePicker, setShowTimePicker] = useState(false);
-  const [remRepeat, setRemRepeat] = useState<Reminder['repeat']>('none');
+  const [remRepeat, setRemRepeat] = useState<Reminder["repeat"]>("none");
 
   // -----------------------------------------------------------
   // 💾 Salvar lembrete (criar / editar)
   // -----------------------------------------------------------
   const onSaveReminder = async () => {
     if (!remTitle.trim()) {
-      Alert.alert('Campo obrigatório', 'Título é obrigatório.');
+      Alert.alert("Campo obrigatório", "Título é obrigatório.");
       return;
     }
 
     const now = new Date();
-    if (remRepeat === 'none' && selectedDate <= now) {
-      Alert.alert('Data inválida', 'A data do lembrete deve ser no futuro.');
+    if (remRepeat === "none" && selectedDate <= now) {
+      Alert.alert("Data inválida", "A data do lembrete deve ser no futuro.");
       return;
     }
 
@@ -70,13 +68,13 @@ export default function TasksAndRemindersScreen() {
       const payloadBase = {
         title: remTitle.trim(),
         description: remDescription.trim() || undefined,
-        date: selectedDate.toISOString().split('T')[0],
+        date: selectedDate.toISOString().split("T")[0],
         time: selectedDate.toTimeString().slice(0, 5),
-        repeat: remRepeat ?? 'none',
+        repeat: remRepeat ?? "none",
         userId: undefined,
       } satisfies Omit<
         Reminder,
-        'id' | 'isCompleted' | 'createdAt' | 'updatedAt' | 'notificationId'
+        "id" | "isCompleted" | "createdAt" | "updatedAt" | "notificationId"
       >;
 
       if (editingRemId) {
@@ -89,32 +87,32 @@ export default function TasksAndRemindersScreen() {
       setShowDatePicker(false);
       setShowTimePicker(false);
       setEditingRemId(null);
-      setRemTitle('');
-      setRemDescription('');
-      setRemRepeat('none');
+      setRemTitle("");
+      setRemDescription("");
+      setRemRepeat("none");
       setSelectedDate(new Date());
 
-      Alert.alert('✅ Lembrete salvo', 'Notificação agendada com sucesso!');
+      Alert.alert("✅ Lembrete salvo", "Notificação agendada com sucesso!");
     } catch (e) {
-      console.error('Erro ao salvar lembrete:', e);
-      Alert.alert('Erro', 'Falha ao salvar lembrete.');
+      console.error("Erro ao salvar lembrete:", e);
+      Alert.alert("Erro", "Falha ao salvar lembrete.");
     }
   };
 
   // -----------------------------------------------------------
-  // Editar lembrete existente (abre modal preenchido)
-// -----------------------------------------------------------
+  // Editar lembrete existente
+  // -----------------------------------------------------------
   const openEditReminder = (rem: Reminder) => {
     setEditingRemId(rem.id);
     setRemTitle(rem.title);
-    setRemDescription(rem.description ?? '');
-    const [year, month, day] = rem.date.split('-').map(Number);
-    const [hour, minute] = rem.time.split(':').map(Number);
+    setRemDescription(rem.description ?? "");
+    const [year, month, day] = rem.date.split("-").map(Number);
+    const [hour, minute] = rem.time.split(":").map(Number);
     const d = new Date();
     d.setFullYear(year, (month ?? 1) - 1, day ?? 1);
     d.setHours(hour ?? 0, minute ?? 0, 0, 0);
     setSelectedDate(d);
-    setRemRepeat(rem.repeat ?? 'none');
+    setRemRepeat(rem.repeat ?? "none");
     setRemModalVisible(true);
   };
 
@@ -122,17 +120,17 @@ export default function TasksAndRemindersScreen() {
   // 🗑️ Excluir lembrete
   // -----------------------------------------------------------
   const onDeleteReminder = (id: string) => {
-    Alert.alert('Excluir', 'Deseja realmente excluir este lembrete?', [
-      { text: 'Cancelar', style: 'cancel' },
+    Alert.alert("Excluir", "Deseja realmente excluir este lembrete?", [
+      { text: "Cancelar", style: "cancel" },
       {
-        text: 'Excluir',
-        style: 'destructive',
+        text: "Excluir",
+        style: "destructive",
         onPress: async () => {
           try {
             await deleteReminder(id);
           } catch (e) {
             console.error(e);
-            Alert.alert('Erro', 'Falha ao excluir o lembrete.');
+            Alert.alert("Erro", "Falha ao excluir o lembrete.");
           }
         },
       },
@@ -145,11 +143,11 @@ export default function TasksAndRemindersScreen() {
   const onSaveTask = async () => {
     const title = taskTitle.trim();
     if (!title) {
-      Alert.alert('Campo obrigatório', 'Título da tarefa é obrigatório.');
+      Alert.alert("Campo obrigatório", "Título da tarefa é obrigatório.");
       return;
     }
 
-    const payload: Omit<Task, 'id' | 'createdAt' | 'completed'> = {
+    const payload: Omit<Task, "id" | "createdAt" | "completed"> = {
       title,
       description: taskDescription.trim() || undefined,
       dueDate: undefined,
@@ -161,27 +159,27 @@ export default function TasksAndRemindersScreen() {
 
     try {
       await addTask(payload as any);
-      setTaskTitle('');
-      setTaskDescription('');
+      setTaskTitle("");
+      setTaskDescription("");
       setTaskModalVisible(false);
     } catch (e) {
       console.error(e);
-      Alert.alert('Erro', 'Falha ao salvar tarefa.');
+      Alert.alert("Erro", "Falha ao salvar tarefa.");
     }
   };
 
   const onDeleteTask = (id: string) => {
-    Alert.alert('Excluir tarefa', 'Deseja realmente excluir esta tarefa?', [
-      { text: 'Cancelar', style: 'cancel' },
+    Alert.alert("Excluir tarefa", "Deseja realmente excluir esta tarefa?", [
+      { text: "Cancelar", style: "cancel" },
       {
-        text: 'Excluir',
-        style: 'destructive',
+        text: "Excluir",
+        style: "destructive",
         onPress: async () => {
           try {
             await deleteTask(id);
           } catch (e) {
             console.error(e);
-            Alert.alert('Erro', 'Falha ao excluir tarefa.');
+            Alert.alert("Erro", "Falha ao excluir tarefa.");
           }
         },
       },
@@ -194,7 +192,7 @@ export default function TasksAndRemindersScreen() {
   const handleDateChange = (event: any, date?: Date) => {
     setShowDatePicker(false);
 
-    if (event.type === 'set' && date) {
+    if (event.type === "set" && date) {
       const newDate = new Date(selectedDate);
       newDate.setFullYear(date.getFullYear());
       newDate.setMonth(date.getMonth());
@@ -202,7 +200,7 @@ export default function TasksAndRemindersScreen() {
 
       setSelectedDate(newDate);
 
-      if (Platform.OS === 'android') {
+      if (Platform.OS === "android") {
         setTimeout(() => {
           setShowTimePicker(true);
         }, 100);
@@ -213,7 +211,7 @@ export default function TasksAndRemindersScreen() {
   const handleTimeChange = (event: any, date?: Date) => {
     setShowTimePicker(false);
 
-    if (event.type === 'set' && date) {
+    if (event.type === "set" && date) {
       const newDate = new Date(selectedDate);
       newDate.setHours(date.getHours());
       newDate.setMinutes(date.getMinutes());
@@ -236,7 +234,6 @@ export default function TasksAndRemindersScreen() {
       style={[styles.container, { backgroundColor: theme.colors.background }]}
       contentContainerStyle={styles.scrollContent}
     >
-      {/* Cabeçalho */}
       <View style={styles.pageHeader}>
         <Text style={[styles.pageTitle, { color: theme.colors.text }]}>
           Tarefas & Lembretes
@@ -325,9 +322,9 @@ export default function TasksAndRemindersScreen() {
           <TouchableOpacity
             onPress={() => {
               setEditingRemId(null);
-              setRemTitle('');
-              setRemDescription('');
-              setRemRepeat('none');
+              setRemTitle("");
+              setRemDescription("");
+              setRemRepeat("none");
               setSelectedDate(new Date());
               setRemModalVisible(true);
             }}
@@ -390,10 +387,10 @@ export default function TasksAndRemindersScreen() {
         )}
       </View>
 
-      {/* MODAL: Nova TAREFA */}
+      {/* MODAL: Nova tarefa */}
       <Modal visible={taskModalVisible} animationType="slide" transparent>
         <KeyboardAvoidingView
-          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          behavior={Platform.OS === "ios" ? "padding" : "height"}
           style={{ flex: 1 }}
         >
           <View style={styles.modalBackdrop}>
@@ -450,9 +447,14 @@ export default function TasksAndRemindersScreen() {
                 </TouchableOpacity>
                 <TouchableOpacity
                   onPress={onSaveTask}
-                  style={[styles.btn, { backgroundColor: theme.colors.primary }]}
+                  style={[
+                    styles.btn,
+                    { backgroundColor: theme.colors.primary },
+                  ]}
                 >
-                  <Text style={{ color: '#fff', fontWeight: '700' }}>Salvar</Text>
+                  <Text style={{ color: "#fff", fontWeight: "700" }}>
+                    Salvar
+                  </Text>
                 </TouchableOpacity>
               </View>
             </View>
@@ -460,15 +462,18 @@ export default function TasksAndRemindersScreen() {
         </KeyboardAvoidingView>
       </Modal>
 
-      {/* MODAL: Novo / Editar LEMBRETE */}
+      {/* MODAL: Novo / Editar lembrete */}
       <Modal visible={remModalVisible} animationType="slide" transparent>
         <KeyboardAvoidingView
-          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          behavior={Platform.OS === "ios" ? "padding" : "height"}
           style={{ flex: 1 }}
         >
           <View style={styles.modalBackdrop}>
             <ScrollView
-              contentContainerStyle={{ flexGrow: 1, justifyContent: 'flex-end' }}
+              contentContainerStyle={{
+                flexGrow: 1,
+                justifyContent: "flex-end",
+              }}
               keyboardShouldPersistTaps="handled"
               bounces={false}
             >
@@ -481,8 +486,10 @@ export default function TasksAndRemindersScreen() {
                   },
                 ]}
               >
-                <Text style={[styles.modalTitle, { color: theme.colors.text }]}>
-                  {editingRemId ? 'Editar lembrete' : 'Novo lembrete'}
+                <Text
+                  style={[styles.modalTitle, { color: theme.colors.text }]}
+                >
+                  {editingRemId ? "Editar lembrete" : "Novo lembrete"}
                 </Text>
 
                 <TextInput
@@ -521,35 +528,34 @@ export default function TasksAndRemindersScreen() {
                   style={[
                     styles.input,
                     {
-                      justifyContent: 'center',
+                      justifyContent: "center",
                       borderColor: theme.colors.border,
                     },
                   ]}
                 >
                   <Text style={{ color: theme.colors.text }}>
-                    📅{' '}
-                    {selectedDate.toLocaleString('pt-BR', {
-                      day: '2-digit',
-                      month: '2-digit',
-                      year: 'numeric',
-                      hour: '2-digit',
-                      minute: '2-digit',
+                    📅{" "}
+                    {selectedDate.toLocaleString("pt-BR", {
+                      day: "2-digit",
+                      month: "2-digit",
+                      year: "numeric",
+                      hour: "2-digit",
+                      minute: "2-digit",
                     })}
                   </Text>
                 </TouchableOpacity>
 
-                {/* DateTimePicker: DATA */}
                 {showDatePicker && (
                   <View style={styles.pickerContainer}>
                     <DateTimePicker
                       value={selectedDate}
-                      mode={Platform.OS === 'android' ? 'date' : 'datetime'}
+                      mode={Platform.OS === "android" ? "date" : "datetime"}
                       is24Hour
-                      display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+                      display={Platform.OS === "ios" ? "spinner" : "default"}
                       minimumDate={new Date()}
                       onChange={handleDateChange}
                     />
-                    {Platform.OS === 'ios' && (
+                    {Platform.OS === "ios" && (
                       <TouchableOpacity
                         onPress={() => setShowDatePicker(false)}
                         style={[
@@ -557,7 +563,9 @@ export default function TasksAndRemindersScreen() {
                           { backgroundColor: theme.colors.primary },
                         ]}
                       >
-                        <Text style={{ color: '#fff', fontWeight: '700' }}>
+                        <Text
+                          style={{ color: "#fff", fontWeight: "700" }}
+                        >
                           Confirmar
                         </Text>
                       </TouchableOpacity>
@@ -565,8 +573,7 @@ export default function TasksAndRemindersScreen() {
                   </View>
                 )}
 
-                {/* DateTimePicker: HORA (Android) */}
-                {showTimePicker && Platform.OS === 'android' && (
+                {showTimePicker && Platform.OS === "android" && (
                   <DateTimePicker
                     value={selectedDate}
                     mode="time"
@@ -583,34 +590,36 @@ export default function TasksAndRemindersScreen() {
                   Repetição
                 </Text>
                 <View style={styles.chipsRow}>
-                  {(['none', 'daily', 'weekly', 'monthly'] as const).map((opt) => (
-                    <TouchableOpacity
-                      key={opt}
-                      onPress={() => setRemRepeat(opt)}
-                      style={[
-                        styles.chip,
-                        {
-                          borderColor: theme.colors.border,
-                          backgroundColor:
-                            remRepeat === opt
-                              ? theme.colors.primary + '22'
-                              : theme.colors.background,
-                        },
-                      ]}
-                    >
-                      <Text
-                        style={{
-                          color:
-                            remRepeat === opt
-                              ? theme.colors.primary
-                              : theme.colors.textSecondary,
-                          fontWeight: remRepeat === opt ? '700' : '400',
-                        }}
+                  {(["none", "daily", "weekly", "monthly"] as const).map(
+                    (opt) => (
+                      <TouchableOpacity
+                        key={opt}
+                        onPress={() => setRemRepeat(opt)}
+                        style={[
+                          styles.chip,
+                          {
+                            borderColor: theme.colors.border,
+                            backgroundColor:
+                              remRepeat === opt
+                                ? theme.colors.primary + "22"
+                                : theme.colors.background,
+                          },
+                        ]}
                       >
-                        {ptRepeat(opt)}
-                      </Text>
-                    </TouchableOpacity>
-                  ))}
+                        <Text
+                          style={{
+                            color:
+                              remRepeat === opt
+                                ? theme.colors.primary
+                                : theme.colors.textSecondary,
+                            fontWeight: remRepeat === opt ? "700" : "400",
+                          }}
+                        >
+                          {ptRepeat(opt)}
+                        </Text>
+                      </TouchableOpacity>
+                    )
+                  )}
                 </View>
 
                 <View style={styles.modalActions}>
@@ -628,9 +637,14 @@ export default function TasksAndRemindersScreen() {
                   </TouchableOpacity>
                   <TouchableOpacity
                     onPress={onSaveReminder}
-                    style={[styles.btn, { backgroundColor: theme.colors.primary }]}
+                    style={[
+                      styles.btn,
+                      { backgroundColor: theme.colors.primary },
+                    ]}
                   >
-                    <Text style={{ color: '#fff', fontWeight: '700' }}>
+                    <Text
+                      style={{ color: "#fff", fontWeight: "700" }}
+                    >
                       Salvar
                     </Text>
                   </TouchableOpacity>
@@ -644,26 +658,20 @@ export default function TasksAndRemindersScreen() {
   );
 }
 
-// -------------------------------------------------------------
-// Helpers
-// -------------------------------------------------------------
-function ptRepeat(rep: Reminder['repeat'] | undefined) {
+function ptRepeat(rep: Reminder["repeat"] | undefined) {
   switch (rep) {
-    case 'daily':
-      return 'Diária';
-    case 'weekly':
-      return 'Semanal';
-    case 'monthly':
-      return 'Mensal';
+    case "daily":
+      return "Diária";
+    case "weekly":
+      return "Semanal";
+    case "monthly":
+      return "Mensal";
     default:
-      return 'Sem repetição';
+      return "Sem repetição";
   }
 }
 
-// -------------------------------------------------------------
-// Estilos
-// -------------------------------------------------------------
-const createStyles = (theme: ReturnType<typeof useTheme>['theme']) =>
+const createStyles = (theme: ReturnType<typeof useTheme>["theme"]) =>
   StyleSheet.create({
     container: { flex: 1 },
     scrollContent: {
@@ -677,13 +685,12 @@ const createStyles = (theme: ReturnType<typeof useTheme>['theme']) =>
     },
     pageTitle: {
       fontSize: 22,
-      fontWeight: '700',
+      fontWeight: "700",
     },
     pageSubtitle: {
       marginTop: 4,
       fontSize: 13,
     },
-
     block: {
       borderWidth: 1,
       borderRadius: 18,
@@ -691,38 +698,37 @@ const createStyles = (theme: ReturnType<typeof useTheme>['theme']) =>
       marginTop: 16,
     },
     blockHeader: {
-      flexDirection: 'row',
-      justifyContent: 'space-between',
-      alignItems: 'center',
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "center",
       marginBottom: 8,
     },
     blockTitle: {
       fontSize: 17,
-      fontWeight: '600',
+      fontWeight: "600",
     },
     btnAdd: {
       paddingHorizontal: 12,
       paddingVertical: 6,
       borderRadius: 999,
-      justifyContent: 'center',
-      alignItems: 'center',
+      justifyContent: "center",
+      alignItems: "center",
     },
     btnAddText: {
-      color: '#fff',
-      fontWeight: '700',
+      color: "#fff",
+      fontWeight: "700",
       fontSize: 13,
     },
-
     row: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      justifyContent: 'space-between',
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
       paddingVertical: 8,
       borderBottomWidth: 1,
     },
     rowTitle: {
       fontSize: 15,
-      fontWeight: '600',
+      fontWeight: "600",
     },
     rowSub: {
       fontSize: 12,
@@ -734,14 +740,13 @@ const createStyles = (theme: ReturnType<typeof useTheme>['theme']) =>
     },
     empty: {
       fontSize: 13,
-      textAlign: 'center',
+      textAlign: "center",
       paddingVertical: 8,
     },
-
     modalBackdrop: {
       flex: 1,
-      backgroundColor: 'rgba(0,0,0,0.4)',
-      justifyContent: 'flex-end',
+      backgroundColor: "rgba(0,0,0,0.4)",
+      justifyContent: "flex-end",
     },
     modalCard: {
       borderTopLeftRadius: 20,
@@ -749,7 +754,7 @@ const createStyles = (theme: ReturnType<typeof useTheme>['theme']) =>
       borderWidth: 1,
       padding: 16,
     },
-    modalTitle: { fontSize: 18, fontWeight: '700', marginBottom: 12 },
+    modalTitle: { fontSize: 18, fontWeight: "700", marginBottom: 12 },
     input: {
       borderWidth: 1,
       borderRadius: 10,
@@ -759,10 +764,10 @@ const createStyles = (theme: ReturnType<typeof useTheme>['theme']) =>
     },
     label: { fontSize: 13, marginBottom: 6 },
     chipsRow: {
-      flexDirection: 'row',
+      flexDirection: "row",
       gap: 8,
       marginBottom: 12,
-      flexWrap: 'wrap',
+      flexWrap: "wrap",
     },
     chip: {
       paddingHorizontal: 12,
@@ -778,18 +783,18 @@ const createStyles = (theme: ReturnType<typeof useTheme>['theme']) =>
       marginLeft: 8,
     },
     modalActions: {
-      flexDirection: 'row',
-      justifyContent: 'flex-end',
+      flexDirection: "row",
+      justifyContent: "flex-end",
       marginTop: 8,
     },
     pickerContainer: {
       marginBottom: 12,
       borderRadius: 10,
-      overflow: 'hidden',
+      overflow: "hidden",
     },
     btnPickerDone: {
       padding: 12,
-      alignItems: 'center',
+      alignItems: "center",
       borderRadius: 8,
       marginTop: 8,
     },

@@ -1,4 +1,3 @@
-// src/screens/MoodScreen.tsx
 import React, { useMemo, useState } from "react";
 import {
   View,
@@ -11,6 +10,7 @@ import {
 } from "react-native";
 import { useTheme } from "@/hooks/useTheme";
 import { useMood } from "@/hooks/useMood";
+import { gamification } from "@/gamification/GamificationEngine"; // 🔥 GATILHO DE MISSÃO
 
 export default function MoodScreen() {
   const { theme } = useTheme();
@@ -22,7 +22,7 @@ export default function MoodScreen() {
   >("morning");
   const [selectedMood, setSelectedMood] = useState<string | null>(null);
   const [selectedClimate, setSelectedClimate] = useState<string | null>(null);
-  const [isMenstrual, setIsMenstrual] = useState(false); // ⭐ NOVO
+  const [isMenstrual, setIsMenstrual] = useState(false);
 
   const moodOptions = [
     { id: "muito_feliz", label: "Muito feliz", emoji: "😁", color: "#FFD93D", rating: 5 },
@@ -64,8 +64,12 @@ export default function MoodScreen() {
         chosen?.emoji ?? "😐",
         chosen?.rating ?? 3,
         selectedClimate as any,
-        isMenstrual // ⭐ NOVO
+        isMenstrual
       );
+
+      // 🔥 conta para a missão "Humor consistente"
+      await gamification.registerEvent("mood_log");
+
       Alert.alert(
         "Registrado",
         `Humor da ${
@@ -74,7 +78,7 @@ export default function MoodScreen() {
       );
       setSelectedMood(null);
       setSelectedClimate(null);
-      setIsMenstrual(false); // limpa flag
+      setIsMenstrual(false);
     } catch {
       Alert.alert("Erro", "Não foi possível registrar o humor.");
     }
@@ -111,7 +115,7 @@ export default function MoodScreen() {
               : "noite"}
             {item.climate ? ` • ${item.climate}` : ""}
             {item.season ? ` • ${item.season}` : ""}
-            {item.isMenstrual ? " • período menstrual" : ""} {/* ⭐ NOVO */}
+            {item.isMenstrual ? " • período menstrual" : ""}
             )
           </Text>
           <Text style={styles.historyDate}>{item.date}</Text>
@@ -132,7 +136,7 @@ export default function MoodScreen() {
       <View style={styles.container}>
         <Text style={styles.title}>Como você está se sentindo?</Text>
 
-        {/* Selecionar período */}
+        {/* Período do dia */}
         <Text style={styles.sectionLabel}>Período do dia</Text>
         <View style={styles.rowChips}>
           {periods.map((p) => (
@@ -162,7 +166,7 @@ export default function MoodScreen() {
           ))}
         </View>
 
-        {/* Selecionar clima */}
+        {/* Clima */}
         <Text style={styles.sectionLabel}>Clima do dia</Text>
         <View style={styles.rowChips}>
           {climateOptions.map((c) => (
@@ -195,7 +199,7 @@ export default function MoodScreen() {
           ))}
         </View>
 
-        {/* Período menstrual */}
+        {/* Ciclo */}
         <Text style={styles.sectionLabel}>Ciclo</Text>
         <View style={styles.rowChips}>
           <TouchableOpacity
@@ -223,9 +227,9 @@ export default function MoodScreen() {
           </TouchableOpacity>
         </View>
 
-        {/* Selecionar humor */}
+        {/* Humor */}
         <Text style={styles.sectionLabel}>Tom do seu dia</Text>
-        <View style={styles.moodSelector}>
+<View style={styles.moodSelector}>
           {moodOptions.map((m) => (
             <TouchableOpacity
               key={m.id}
