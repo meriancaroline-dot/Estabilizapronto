@@ -1,4 +1,6 @@
+// -------------------------------------------------------------
 // src/screens/ProfileScreen.tsx
+// -------------------------------------------------------------
 import React, { useMemo, useState } from "react";
 import {
   View,
@@ -17,6 +19,9 @@ import { useSettings } from "@/contexts/SettingsContext";
 import { useNavigation } from "@react-navigation/native";
 import { Ionicons } from "@expo/vector-icons";
 
+import { useMissions } from "@/contexts/MissionsContext";
+import { CollapsibleMissionCard } from "@/components/CollapsibleMissionCard";
+
 type ThemeMode = "light" | "dark" | "system";
 
 export default function ProfileScreen() {
@@ -25,6 +30,7 @@ export default function ProfileScreen() {
   const { achievements, getUnlocked, getLocked } = useAchievements();
   const { settings, updateSettings } = useSettings();
   const navigation = useNavigation<any>();
+  const { activeMissions } = useMissions();
 
   const styles = useMemo(() => createStyles(theme), [theme]);
 
@@ -32,15 +38,13 @@ export default function ProfileScreen() {
   const [tab, setTab] = useState<"achievements" | "missions">("achievements");
 
   const unlocked = getUnlocked();
-  console.log("ACHIEVEMENTS NA TELA:", achievements);
+  getLocked(); // mantido caso queira usar depois, mas não exibimos por enquanto
 
-  const locked = getLocked();
-
-  // 🎯 separamos conquistas reais das metas
+  // 🎯 separa conquistas
   const uniqueUnlocked = unlocked.filter((a) => !a.isMeta);
   const collectorUnlocked = unlocked.filter((a) => a.isMeta);
 
-  // Nível: só com conquistas reais
+  // nível
   const level = Math.max(1, Math.floor(uniqueUnlocked.length / 3) + 1);
   const totalForNext = level * 3;
   const progressToNext =
@@ -56,28 +60,6 @@ export default function ProfileScreen() {
       ? `${uniqueUnlocked.length} conquistas únicas • ${collectorUnlocked.length} de coleção • ${progressToNext}% até o próximo nível`
       : `${uniqueUnlocked.length} conquistas • ${progressToNext}% até o próximo nível`;
 
-  // Missões estáticas por enquanto (só pra explicar pro usuário)
-  const missions = [
-    {
-      id: "m1",
-      title: "Semana estável",
-      description: "Complete ao menos 5 hábitos em uma semana.",
-      hint: "Acompanhe na tela de Hábitos.",
-    },
-    {
-      id: "m2",
-      title: "Humor atento",
-      description: "Registre seu humor em 3 períodos no mesmo dia.",
-      hint: "Use a tela de Humor.",
-    },
-    {
-      id: "m3",
-      title: "Dia organizado",
-      description: "Conclua 3 tarefas em um único dia.",
-      hint: "Gerencie suas tarefas em Tarefas & Lembretes.",
-    },
-  ];
-
   const currentThemeMode = settings.theme as ThemeMode;
 
   const handleThemeChange = async (mode: ThemeMode) => {
@@ -85,17 +67,9 @@ export default function ProfileScreen() {
     setThemePopupVisible(false);
   };
 
-  const handleLogoutPress = () => {
-    logout();
-  };
-
-  const handleEditProfile = () => {
-    navigation.navigate("EditProfile");
-  };
-
-  const handleGoToSettings = () => {
-    navigation.navigate("Settings");
-  };
+  const handleLogoutPress = () => logout();
+  const handleEditProfile = () => navigation.navigate("EditProfile");
+  const handleGoToSettings = () => navigation.navigate("Settings");
 
   return (
     <View
@@ -105,91 +79,105 @@ export default function ProfileScreen() {
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        {/* Cabeçalho: avatar + nome + botão popup de tema */}
-        <View style={styles.headerRow}>
-          <View style={styles.avatarBlock}>
-            {user?.avatar ? (
-              <Image source={{ uri: user.avatar }} style={styles.avatar} />
-            ) : (
-              <View style={styles.avatarPlaceholder}>
-                <Text style={styles.avatarInitial}>
-                  {user?.name?.[0]?.toUpperCase() ?? "E"}
-                </Text>
+        {/* CARD PRINCIPAL DO PERFIL */}
+        <View style={styles.profileCard}>
+          <View style={styles.profileTopRow}>
+            {/* Avatar + editar */}
+            <View style={styles.avatarBlock}>
+              {user?.avatar ? (
+                <Image source={{ uri: user.avatar }} style={styles.avatar} />
+              ) : (
+                <View style={styles.avatarPlaceholder}>
+                  <Text style={styles.avatarInitial}>
+                    {user?.name?.[0]?.toUpperCase() ?? "E"}
+                  </Text>
+                </View>
+              )}
+
+              <TouchableOpacity onPress={handleEditProfile}>
+                <Text style={styles.editProfileText}>Editar perfil</Text>
+              </TouchableOpacity>
+            </View>
+
+            {/* Nome, email, nível */}
+            <View style={styles.headerInfo}>
+              <View style={styles.nameRow}>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.userName}>
+                    {user?.name ?? "Usuário"}
+                  </Text>
+                  {user?.email ? (
+                    <Text style={styles.userEmail}>{user.email}</Text>
+                  ) : null}
+                </View>
+
+                {/* Botão tema no canto do card */}
+                <TouchableOpacity
+                  style={styles.themeButton}
+                  onPress={() => setThemePopupVisible(true)}
+                  activeOpacity={0.8}
+                >
+                  <Ionicons
+                    name={
+                      currentThemeMode === "dark"
+                        ? "moon"
+                        : currentThemeMode === "light"
+                        ? "sunny"
+                        : "contrast-outline"
+                    }
+                    size={18}
+                    color={theme.colors.text}
+                  />
+                </TouchableOpacity>
               </View>
-            )}
 
-            <TouchableOpacity onPress={handleEditProfile}>
-              <Text style={styles.editProfileText}>Editar perfil</Text>
-            </TouchableOpacity>
-          </View>
+              {/* Nível + barra */}
+              <View style={styles.levelRow}>
+                <View style={styles.levelBadge}>
+                  <Ionicons
+                    name="sparkles-outline"
+                    size={14}
+                    color={theme.colors.primary}
+                  />
+                  <Text style={styles.levelText}>Nível {level}</Text>
+                </View>
+                <Text style={styles.levelSub}>{levelSubtitle}</Text>
 
-          <View style={styles.headerInfo}>
-            <Text style={styles.userName}>{user?.name ?? "Usuário"}</Text>
-            <Text style={styles.userEmail}>{user?.email ?? ""}</Text>
-
-            <View style={styles.levelRow}>
-              <View style={styles.levelBadge}>
-                <Ionicons
-                  name="sparkles-outline"
-                  size={14}
-                  color={theme.colors.primary}
-                />
-                <Text style={styles.levelText}>Nível {level}</Text>
-              </View>
-              <Text style={styles.levelSub}>{levelSubtitle}</Text>
-
-<View style={styles.levelBar}>
-                <View
-                  style={[
-                    styles.levelBarFill,
-                    {
-                      width: `${progressToNext}%`,
-                      backgroundColor: theme.colors.primary,
-                    },
-                  ]}
-                />
+                <View style={styles.levelBar}>
+                  <View
+                    style={[
+                      styles.levelBarFill,
+                      {
+                        width: `${progressToNext}%`,
+                        backgroundColor: theme.colors.primary,
+                      },
+                    ]}
+                  />
+                </View>
               </View>
             </View>
           </View>
 
-          {/* Botãozinho redondo de tema */}
-          <View style={styles.themeButtonWrapper}>
+          {/* Ações rápidas dentro do card */}
+          <View style={styles.quickActions}>
             <TouchableOpacity
-              style={styles.themeButton}
-              onPress={() => setThemePopupVisible(true)}
-              activeOpacity={0.8}
+              style={[
+                styles.quickButton,
+                { borderColor: theme.colors.border },
+              ]}
+              onPress={handleGoToSettings}
             >
               <Ionicons
-                name={
-                  currentThemeMode === "dark"
-                    ? "moon"
-                    : currentThemeMode === "light"
-                    ? "sunny"
-                    : "contrast-outline"
-                }
+                name="settings-outline"
                 size={18}
                 color={theme.colors.text}
               />
+              <Text style={styles.quickButtonText}>Configurações</Text>
             </TouchableOpacity>
           </View>
         </View>
 
-        {/* Botões de navegação rápida */}
-        <View style={styles.quickActions}>
-          <TouchableOpacity
-            style={[styles.quickButton, { borderColor: theme.colors.border }]}
-            onPress={handleGoToSettings}
-          >
-            <Ionicons
-              name="settings-outline"
-              size={18}
-              color={theme.colors.text}
-            />
-            <Text style={styles.quickButtonText}>Configurações</Text>
-          </TouchableOpacity>
-        </View>
-
-        {/* Tabs: Conquistas / Missões */}
+        {/* TABS (Conquistas / Missões) */}
         <View style={styles.tabsRow}>
           <TouchableOpacity
             style={[
@@ -238,20 +226,37 @@ export default function ProfileScreen() {
           </TouchableOpacity>
         </View>
 
-        {/* Conteúdo da aba */}
+        {/* CONQUISTAS */}
         {tab === "achievements" ? (
           <View style={styles.card}>
-            <Text style={styles.sectionTitle}>Suas medalhas</Text>
+            <View style={styles.sectionHeaderRow}>
+              <View style={styles.sectionTitleRow}>
+                <Ionicons
+                  name="trophy-outline"
+                  size={18}
+                  color={theme.colors.primary}
+                  style={{ marginRight: 6 }}
+                />
+                <Text style={styles.sectionTitle}>Suas medalhas</Text>
+              </View>
+              {achievements.length > 0 && (
+                <Text style={styles.sectionCounter}>
+                  {uniqueUnlocked.length} desbloqueadas
+                </Text>
+              )}
+            </View>
+
             {achievements.length === 0 ? (
               <Text style={styles.emptyText}>
-                Nada por aqui ainda. Ao completar hábitos, tarefas e registros,
-                novas medalhas vão aparecer aqui. 🏅
+                Nada por aqui ainda. Conforme você usa o app, medalhas vão
+                aparecer aqui. 🏅
               </Text>
             ) : (
               <View style={styles.medalsGrid}>
                 {achievements.map((a) => {
                   const isUnlocked = Boolean(a.unlockedAt);
                   const isMeta = Boolean(a.isMeta);
+
                   return (
                     <View
                       key={a.id}
@@ -291,6 +296,7 @@ export default function ProfileScreen() {
                           {Math.round(a.progress ?? 0)}%
                         </Text>
                       </View>
+
                       <Text style={styles.medalStatusText}>
                         {isUnlocked ? "Desbloqueada" : "Em progresso"}
                       </Text>
@@ -301,40 +307,43 @@ export default function ProfileScreen() {
             )}
           </View>
         ) : (
+          // MISSÕES AUTO-ATUALIZÁVEIS
           <View style={styles.card}>
-            <Text style={styles.sectionTitle}>Missões em andamento</Text>
+            <View style={styles.sectionHeaderRow}>
+              <View style={styles.sectionTitleRow}>
+                <Ionicons
+                  name="flag-outline"
+                  size={18}
+                  color={theme.colors.primary}
+                  style={{ marginRight: 6 }}
+                />
+                <Text style={styles.sectionTitle}>Missões em andamento</Text>
+              </View>
+            </View>
+
             <Text style={styles.sectionSubtitle}>
-              As missões guiam o seu uso do app: quanto mais você registra e
-              conclui, mais estável e previsível fica a sua rotina.
+              Elas se ajustam automaticamente conforme você usa o Estabiliza.
             </Text>
 
-            {missions.map((m) => (
-              <View
-                key={m.id}
-                style={[
-                  styles.missionCard,
-                  {
-                    borderColor: theme.colors.border,
-                    backgroundColor: theme.colors.surface,
-                  },
-                ]}
-              >
-                <View style={styles.missionHeader}>
-                  <Ionicons
-                    name="flag-outline"
-                    size={16}
-                    color={theme.colors.primary}
-                  />
-                  <Text style={styles.missionTitle}>{m.title}</Text>
-                </View>
-                <Text style={styles.missionDesc}>{m.description}</Text>
-                <Text style={styles.missionHint}>{m.hint}</Text>
-              </View>
-            ))}
+            {activeMissions.length === 0 ? (
+              <Text style={styles.emptyText}>
+                Nenhuma missão ativa no momento. Continue usando o app que novas
+                missões vão aparecer por aqui. ✨
+              </Text>
+            ) : (
+              activeMissions.map((m) => (
+                <CollapsibleMissionCard
+                  key={m.id}
+                  title={`${m.title} (${m.progress}%)`}
+                  description={m.description}
+                  hint={`Meta atual: ${m.target}`}
+                />
+              ))
+            )}
           </View>
         )}
 
-        {/* Botão de sair discreto no fim */}
+        {/* Logout */}
         <View style={styles.footerSpace}>
           <TouchableOpacity
             onPress={handleLogoutPress}
@@ -405,9 +414,9 @@ export default function ProfileScreen() {
   );
 }
 
-// ---------------------
-// Sub-componente ThemeOption
-// ---------------------
+// ------------------------------------------------------------------
+// Subcomponent: ThemeOption
+// ------------------------------------------------------------------
 type ThemeOptionProps = {
   label: string;
   icon: keyof typeof Ionicons.glyphMap;
@@ -466,9 +475,9 @@ const themeOptionStyles = StyleSheet.create({
   },
 });
 
-// ---------------------
+// ------------------------------------------------------------------
 // Estilos
-// ---------------------
+// ------------------------------------------------------------------
 const createStyles = (theme: ReturnType<typeof useTheme>["theme"]) =>
   StyleSheet.create({
     container: {
@@ -476,13 +485,27 @@ const createStyles = (theme: ReturnType<typeof useTheme>["theme"]) =>
     },
     scrollContent: {
       paddingHorizontal: theme.spacing.lg,
-      paddingTop: 56,
-      paddingBottom: 40,
+      paddingTop: 40,
+      paddingBottom: 180,
     },
-    headerRow: {
+
+    // CARD DO PERFIL
+    profileCard: {
+      borderRadius: theme.borderRadius.xl ?? theme.borderRadius.lg,
+      borderWidth: 1,
+      borderColor: theme.colors.border,
+      backgroundColor: theme.colors.surface,
+      padding: theme.spacing.md,
+      marginBottom: theme.spacing.lg,
+      shadowColor: "#000",
+      shadowOpacity: 0.06,
+      shadowRadius: 10,
+      shadowOffset: { width: 0, height: 4 },
+      elevation: 3,
+    },
+    profileTopRow: {
       flexDirection: "row",
       alignItems: "center",
-      marginBottom: theme.spacing.lg,
     },
     avatarBlock: {
       alignItems: "center",
@@ -517,6 +540,11 @@ const createStyles = (theme: ReturnType<typeof useTheme>["theme"]) =>
     headerInfo: {
       flex: 1,
     },
+    nameRow: {
+      flexDirection: "row",
+      alignItems: "flex-start",
+      marginBottom: 6,
+    },
     userName: {
       fontSize: 20,
       fontWeight: "700",
@@ -525,19 +553,34 @@ const createStyles = (theme: ReturnType<typeof useTheme>["theme"]) =>
     userEmail: {
       fontSize: 12,
       color: theme.colors.textSecondary,
-      marginBottom: 6,
+      marginTop: 2,
     },
+
+    themeButton: {
+      width: 34,
+      height: 34,
+      borderRadius: 17,
+      borderWidth: 1,
+      borderColor: theme.colors.border,
+      alignItems: "center",
+      justifyContent: "center",
+      backgroundColor: theme.colors.background,
+      marginLeft: 8,
+    },
+
+    // Level
     levelRow: {
       marginTop: 4,
     },
     levelBadge: {
       flexDirection: "row",
       alignItems: "center",
+      alignSelf: "flex-start",
       gap: 6,
       paddingHorizontal: 10,
       paddingVertical: 4,
       borderRadius: 999,
-      backgroundColor: theme.colors.surface,
+      backgroundColor: theme.colors.background,
     },
     levelText: {
       fontSize: 12,
@@ -550,35 +593,22 @@ const createStyles = (theme: ReturnType<typeof useTheme>["theme"]) =>
       marginTop: 4,
     },
     levelBar: {
-      marginTop: 6,
-      height: 5,
+      marginTop: 8,
+      height: 6,
       borderRadius: 999,
-      backgroundColor: theme.colors.surface,
+      backgroundColor: theme.colors.background,
       overflow: "hidden",
     },
     levelBarFill: {
       height: "100%",
       borderRadius: 999,
     },
-    themeButtonWrapper: {
-      marginLeft: 8,
-      alignItems: "flex-start",
-      justifyContent: "flex-start",
-    },
-    themeButton: {
-      width: 34,
-      height: 34,
-      borderRadius: 17,
-      borderWidth: 1,
-      borderColor: theme.colors.border,
-      alignItems: "center",
-      justifyContent: "center",
-      backgroundColor: theme.colors.surface,
-    },
+
+    // Quick actions dentro do card
     quickActions: {
       flexDirection: "row",
       gap: 10,
-      marginBottom: theme.spacing.lg,
+      marginTop: theme.spacing.md,
     },
     quickButton: {
       flexDirection: "row",
@@ -588,12 +618,14 @@ const createStyles = (theme: ReturnType<typeof useTheme>["theme"]) =>
       borderRadius: 999,
       paddingHorizontal: 12,
       paddingVertical: 6,
-      backgroundColor: theme.colors.surface,
+      backgroundColor: theme.colors.background,
     },
     quickButtonText: {
       fontSize: 13,
       color: theme.colors.text,
     },
+
+    // Tabs
     tabsRow: {
       flexDirection: "row",
       gap: 8,
@@ -607,34 +639,58 @@ const createStyles = (theme: ReturnType<typeof useTheme>["theme"]) =>
       paddingVertical: 8,
       alignItems: "center",
       justifyContent: "center",
+      backgroundColor: theme.colors.surface,
     },
     tabText: {
       fontSize: 13,
       color: theme.colors.textSecondary,
     },
+
+    // Cards gerais (conquistas / missões)
     card: {
       borderRadius: theme.borderRadius.lg,
       borderWidth: 1,
       borderColor: theme.colors.border,
       backgroundColor: theme.colors.surface,
       padding: theme.spacing.md,
+      shadowColor: "#000",
+      shadowOpacity: 0.03,
+      shadowRadius: 8,
+      shadowOffset: { width: 0, height: 3 },
+      elevation: 2,
+    },
+    sectionHeaderRow: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "center",
+      marginBottom: 4,
+    },
+    sectionTitleRow: {
+      flexDirection: "row",
+      alignItems: "center",
     },
     sectionTitle: {
       fontSize: 16,
       fontWeight: "700",
       color: theme.colors.text,
-      marginBottom: 4,
+    },
+    sectionCounter: {
+      fontSize: 12,
+      color: theme.colors.textSecondary,
     },
     sectionSubtitle: {
       fontSize: 13,
       color: theme.colors.textSecondary,
       marginBottom: 10,
+      marginTop: 2,
     },
     emptyText: {
       fontSize: 13,
       color: theme.colors.textSecondary,
       marginTop: 4,
     },
+
+    // Medalhas
     medalsGrid: {
       flexDirection: "row",
       flexWrap: "wrap",
@@ -698,6 +754,8 @@ const createStyles = (theme: ReturnType<typeof useTheme>["theme"]) =>
       color: theme.colors.textSecondary,
       marginTop: 2,
     },
+
+    // Missões
     missionCard: {
       borderRadius: 14,
       borderWidth: 1,
@@ -725,6 +783,8 @@ const createStyles = (theme: ReturnType<typeof useTheme>["theme"]) =>
       marginTop: 4,
       fontStyle: "italic",
     },
+
+    // Footer
     footerSpace: {
       marginTop: 24,
       marginBottom: 16,
@@ -738,11 +798,14 @@ const createStyles = (theme: ReturnType<typeof useTheme>["theme"]) =>
       borderRadius: 999,
       paddingHorizontal: 14,
       paddingVertical: 8,
+      backgroundColor: theme.colors.surface,
     },
     logoutText: {
       fontSize: 13,
       color: theme.colors.textSecondary,
     },
+
+    // Modal de tema
     themeModalBackdrop: {
       flex: 1,
       backgroundColor: "rgba(0,0,0,0.25)",

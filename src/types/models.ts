@@ -64,7 +64,7 @@ export interface Habit {
   id: string;
   title: string;
   description?: string;
-  frequency?: "daily" | "weekly" | "monthly" | "custom"; // ✅ agora aceita custom
+  frequency?: "daily" | "weekly" | "monthly" | "custom";
   streak?: number;
   lastCompleted?: string;
   isActive?: boolean;
@@ -78,12 +78,12 @@ export interface Habit {
 export interface Mood {
   id: string;
   rating: number; // 1 a 5
-  label: string; // Ex: “Feliz”, “Triste”
+  label: string;
   emoji: string;
   weather?: string;
   season?: string;
   note?: string;
-  date: string; // yyyy-mm-dd
+  date: string;
   period?: "morning" | "afternoon" | "night";
   createdAt?: string;
   updatedAt?: string;
@@ -121,12 +121,20 @@ export interface AppUser {
   name: string;
   email: string;
   avatar?: string;
+
+  // ⭐ ADICIONADO (sem alterar nada existente)
+  gender?: "female" | "male" | "non_binary" | "other" | "prefer_not_to_say";
+  emergencyContactName?: string;
+  emergencyContactPhone?: string;
+  emergencyContactRelation?: string;
+
   preferences?: UserPreferences;
+
   createdAt: string;
   updatedAt?: string;
 }
 
-// Alias para compatibilidade com contexts antigos
+// Alias para compatibilidade
 export type User = AppUser;
 
 // -------------------------------------------------------------
@@ -146,7 +154,7 @@ export interface AppSettings {
   language: string;
   updatedAt: string;
   dailyReminderTime?: string;
-  lastCloudSync?: string; // usado pelo useSync
+  lastCloudSync?: string;
 }
 
 // -------------------------------------------------------------

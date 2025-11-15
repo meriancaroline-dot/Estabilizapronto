@@ -1,5 +1,5 @@
 // -------------------------------------------------------------
-// src/contexts/AchievementsContext.tsx
+// src/contexts/AchievementsContext.tsx (CORRIGIDO)
 // -------------------------------------------------------------
 import React, {
   createContext,
@@ -7,6 +7,7 @@ import React, {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -21,11 +22,9 @@ export interface Achievement {
   title: string;
   description: string;
   icon: string;
-  progress: number; // 0 a 100
+  progress: number;
   unlockedAt?: string;
   userId: string;
-
-  // 🧠 Marca se é conquista "meta" (criada automaticamente)
   isMeta?: boolean;
 }
 
@@ -38,10 +37,12 @@ interface AchievementsContextData {
   addAchievement: (
     data: Omit<Achievement, "id" | "unlockedAt">
   ) => Promise<Achievement>;
+
   updateAchievement: (
     id: string,
     data: Partial<Omit<Achievement, "id">>
   ) => Promise<Achievement>;
+
   deleteAchievement: (id: string) => Promise<void>;
 
   setProgress: (id: string, progress: number) => Promise<Achievement>;
@@ -59,14 +60,14 @@ interface AchievementsContextData {
 }
 
 const STORAGE_KEY = "@estabiliza:achievements";
+const INIT_FLAG_KEY = "@estabiliza:achievements_initialized"; // 🔥 NOVO
+
 const AchievementsContext =
   createContext<AchievementsContextData | undefined>(undefined);
 
 // -------------------------------------------------------------
-// Config de “lista infinita” de meta-conquistas (colecionadora)
+// Meta conquistas — coleção infinita
 // -------------------------------------------------------------
-// Base que você já tinha (mantida)
-// depois disso, a gente gera mais patamares dinamicamente
 const BASE_COLLECTOR_THRESHOLDS = [
   1, 3, 5, 10, 15, 20, 30, 50, 75, 100, 150, 200, 300, 500,
 ];
@@ -82,13 +83,10 @@ function getCollectorTitle(target: number): string {
   return "Primeira Conquista";
 }
 
-// Gera thresholds até cobrir o total atual de conquistas únicas
 function getCollectorThresholds(maxUnlocked: number): number[] {
   const thresholds = [...BASE_COLLECTOR_THRESHOLDS];
   let last = BASE_COLLECTOR_THRESHOLDS[BASE_COLLECTOR_THRESHOLDS.length - 1];
 
-  // Depois de 500, vai abrindo “de tanto em tanto” pra frente
-  // (não é literalmente infinito matemático, mas vai gerando enquanto precisar)
   while (last < maxUnlocked) {
     const step = last < 1000 ? 250 : 500;
     last += step;
@@ -98,13 +96,11 @@ function getCollectorThresholds(maxUnlocked: number): number[] {
   return thresholds;
 }
 
-// Gera / garante as conquistas “meta” com base na QTD de conquistas desbloqueadas
 function ensureCollectorAchievements(list: Achievement[]): Achievement[] {
   const realUnlockedCount = list.filter(
     (a) => a.unlockedAt && !a.isMeta
   ).length;
 
-  // Se não tem nada desbloqueado ainda, não cria meta nenhuma
   if (realUnlockedCount === 0) return list;
 
   const result = [...list];
@@ -114,27 +110,93 @@ function ensureCollectorAchievements(list: Achievement[]): Achievement[] {
     if (realUnlockedCount < target) continue;
 
     const id = `collector_${target}`;
-    const alreadyExists = result.some((a) => a.id === id);
+    const exists = result.some((a) => a.id === id);
 
-    if (!alreadyExists) {
-      const title = getCollectorTitle(target);
-
-      const metaAchievement: Achievement = {
+    if (!exists) {
+      result.push({
         id,
-        title,
-        description: `Você já desbloqueou ${target} conquistas no Estabiliza.`,
+        title: getCollectorTitle(target),
+        description: `Você já desbloqueou ${target} conquistas.`,
         icon: "💎",
         progress: 100,
         unlockedAt: new Date().toISOString(),
         userId: "system",
         isMeta: true,
-      };
-
-      result.push(metaAchievement);
+      });
     }
   }
 
   return result;
+}
+
+// 🔥 Conquistas base do sistema
+function getBaseAchievements(): Achievement[] {
+  return [
+    {
+      id: "first_mood",
+      title: "Primeiro registro de humor",
+      description: "Você registrou seu primeiro humor!",
+      icon: "😊",
+      progress: 0,
+      userId: "system",
+    },
+    {
+      id: "mood_streak_7",
+      title: "Consistência emocional",
+      description: "7 dias seguidos registrando humor!",
+      icon: "📅",
+      progress: 0,
+      userId: "system",
+    },
+    {
+      id: "first_habit",
+      title: "Primeiro hábito concluído",
+      description: "Você concluiu seu primeiro hábito!",
+      icon: "🔥",
+      progress: 0,
+      userId: "system",
+    },
+    {
+      id: "habits_10",
+      title: "Rotina Forte",
+      description: "Você completou 10 hábitos!",
+      icon: "💪",
+      progress: 0,
+      userId: "system",
+    },
+    {
+      id: "first_note",
+      title: "Primeira nota criada",
+      description: "Você escreveu sua primeira nota!",
+      icon: "📝",
+      progress: 0,
+      userId: "system",
+    },
+    {
+      id: "notes_5",
+      title: "Mente Fluindo",
+      description: "Você criou 5 notas!",
+      icon: "✨",
+      progress: 0,
+      userId: "system",
+    },
+    {
+      id: "first_reminder",
+      title: "Primeiro lembrete concluído",
+      description: "Você concluiu seu primeiro lembrete!",
+      icon: "⏰",
+      progress: 0,
+      userId: "system",
+    },
+    {
+      id: "reminder_10",
+      title: "Pontualidade Máxima",
+      description: "Você concluiu 10 lembretes!",
+      icon: "🏆",
+      progress: 0,
+      userId: "system",
+    },
+  ];
 }
 
 // -------------------------------------------------------------
@@ -147,6 +209,9 @@ export const AchievementsProvider: React.FC<React.PropsWithChildren> = ({
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isInitialized, setIsInitialized] = useState(false);
+  
+  // 🔥 NOVO: ref para evitar inicialização dupla
+  const hasInitializedBase = useRef(false);
 
   const clamp = (n: number, min: number, max: number) =>
     Math.max(min, Math.min(max, n));
@@ -167,28 +232,56 @@ export const AchievementsProvider: React.FC<React.PropsWithChildren> = ({
         (a, b) =>
           dayjs(b.unlockedAt!).valueOf() - dayjs(a.unlockedAt!).valueOf()
       );
+
     const locked = list
       .filter((a) => !a.unlockedAt)
       .sort((a, b) => a.title.localeCompare(b.title));
+
     return [...unlocked, ...locked];
   }, []);
 
-  // 🔁 Aplica meta-conquistas + ordenação em um lugar só
   const applyMetaAndSort = useCallback(
-    (list: Achievement[]) => {
-      const withMeta = ensureCollectorAchievements(list);
-      return sortList(withMeta);
-    },
+    (list: Achievement[]) => sortList(ensureCollectorAchievements(list)),
     [sortList]
   );
 
+  // 🔥 MODIFICADO: inicializa conquistas base + permite novas
   const loadFromStorage = useCallback(async () => {
     setLoading(true);
     try {
       const raw = await AsyncStorage.getItem(STORAGE_KEY);
-      const parsed: Achievement[] = raw ? JSON.parse(raw) : [];
-      const withMetaAndSorted = applyMetaAndSort(parsed);
-      setAchievements(withMetaAndSorted);
+      const initFlag = await AsyncStorage.getItem(INIT_FLAG_KEY);
+      
+      let parsed: Achievement[] = raw ? JSON.parse(raw) : [];
+      
+      // 🔥 Se nunca inicializou, cria conquistas base
+      if (!initFlag) {
+        console.log("🎯 Primeira inicialização - criando conquistas base...");
+        const baseAchievements = getBaseAchievements();
+        
+        // Mescla com conquistas existentes (caso existam)
+        const baseIds = new Set(baseAchievements.map(a => a.id));
+        const existingOthers = parsed.filter(a => !baseIds.has(a.id));
+        
+        parsed = [...baseAchievements, ...existingOthers];
+        
+        await AsyncStorage.setItem(INIT_FLAG_KEY, "true");
+        await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(parsed));
+        hasInitializedBase.current = true;
+      } else {
+        // 🔥 Se já inicializou, verifica se há conquistas base faltando
+        const baseAchievements = getBaseAchievements();
+        const existingIds = new Set(parsed.map(a => a.id));
+        const missingBase = baseAchievements.filter(a => !existingIds.has(a.id));
+        
+        if (missingBase.length > 0) {
+          console.log(`🎯 Adicionando ${missingBase.length} conquistas base faltantes...`);
+          parsed = [...parsed, ...missingBase];
+          await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(parsed));
+        }
+      }
+      
+      setAchievements(applyMetaAndSort(parsed));
     } catch (e) {
       console.error("Erro ao carregar conquistas:", e);
       setError("Falha ao carregar conquistas.");
@@ -198,6 +291,9 @@ export const AchievementsProvider: React.FC<React.PropsWithChildren> = ({
     }
   }, [applyMetaAndSort]);
 
+  // -------------------------------------------------------------
+  // Carregar conquistas iniciais
+  // -------------------------------------------------------------
   useEffect(() => {
     dayjs.locale("pt-br");
     loadFromStorage();
@@ -256,6 +352,7 @@ export const AchievementsProvider: React.FC<React.PropsWithChildren> = ({
       const sorted = applyMetaAndSort(list);
       setAchievements(sorted);
       await persist(sorted);
+
       return updated;
     },
     [achievements, applyMetaAndSort, persist]
@@ -264,9 +361,9 @@ export const AchievementsProvider: React.FC<React.PropsWithChildren> = ({
   const deleteAchievement = useCallback(
     async (id: string) => {
       const filtered = achievements.filter((a) => a.id !== id);
-      const withMetaAndSorted = applyMetaAndSort(filtered);
-      setAchievements(withMetaAndSorted);
-      await persist(withMetaAndSorted);
+      const next = applyMetaAndSort(filtered);
+      setAchievements(next);
+      await persist(next);
     },
     [achievements, applyMetaAndSort, persist]
   );
@@ -284,10 +381,9 @@ export const AchievementsProvider: React.FC<React.PropsWithChildren> = ({
     async (id: string, delta: number) => {
       const item = achievements.find((a) => a.id === id);
       if (!item) throw new Error("Conquista não encontrada.");
-      const next = clamp(item.progress + delta, 0, 100);
-      return updateAchievement(id, { progress: next });
+      return setProgress(id, item.progress + delta);
     },
-    [achievements, updateAchievement]
+    [achievements, setProgress]
   );
 
   const getProgressFor = useCallback(
@@ -308,7 +404,10 @@ export const AchievementsProvider: React.FC<React.PropsWithChildren> = ({
   );
 
   const lockAchievement = useCallback(
-    async (id: string) => updateAchievement(id, { unlockedAt: undefined }),
+    async (id: string) =>
+      updateAchievement(id, {
+        unlockedAt: undefined,
+      }),
     [updateAchievement]
   );
 
@@ -336,7 +435,7 @@ export const AchievementsProvider: React.FC<React.PropsWithChildren> = ({
   );
 
   const refreshFromStorage = useCallback(
-    loadFromStorage,
+    () => loadFromStorage(),
     [loadFromStorage]
   );
 

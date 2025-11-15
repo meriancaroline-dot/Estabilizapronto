@@ -13,6 +13,9 @@ import * as Notifications from 'expo-notifications';
 import dayjs from 'dayjs';
 import 'dayjs/locale/pt-br';
 
+// 🚨 ADICIONADO
+import { gamification } from '@/gamification/GamificationEngine';
+
 // -----------------------------
 // Tipos
 // -----------------------------
@@ -312,8 +315,12 @@ export const RemindersProvider: React.FC<React.PropsWithChildren> = ({ children 
       let nextMap = { ...notifMap };
 
       if (toggled.isCompleted) {
+        // 🚨 REGISTRA GANHO DE XP AQUI
+        await gamification.registerEvent("reminder_done");
+
         await cancelNotification(nextMap[id]);
         nextMap[id] = undefined;
+
         if (toggled.repeat && toggled.repeat !== 'none') {
           toggled.date = nextOccurrence(toggled.date, toggled.repeat);
           toggled.isCompleted = false;

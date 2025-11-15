@@ -9,17 +9,21 @@ import { RootStackParamList } from "./types";
 import { useTheme } from "@/hooks/useTheme";
 import { useUser } from "@/contexts/UserContext";
 
-// 🔐 Telas de autenticação
+// Auth
 import LoginScreen from "@/screens/LoginScreen";
 import RegisterScreen from "@/screens/RegisterScreen";
 import ForgotPasswordScreen from "@/screens/ForgotPasswordScreen";
 
-// ⭐ Telas do módulo de parceiros
+// Parceiros
 import PartnersScreen from "@/screens/PartnersScreen";
 import PartnerDetailScreen from "@/screens/PartnerDetailScreen";
 
-// ⭐ Tela de Modo Crise (AGORA ATIVADA)
+// Crise + Minijogos
 import CrisisScreen from "@/screens/CrisisScreen";
+import CrisisGamesScreen from "@/screens/CrisisGamesScreen";
+
+// Água
+import WaterTrackerScreen from "@/screens/WaterTrackerScreen";
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
@@ -54,7 +58,7 @@ export default function AppNavigator() {
     >
       {user ? (
         <>
-          {/* Telas principais */}
+          {/* Tabs principais */}
           <Stack.Screen
             name="Tabs"
             component={BottomTabs}
@@ -80,7 +84,7 @@ export default function AppNavigator() {
             }}
           />
 
-          {/* ⭐ Tela de Modo Crise — AGORA FUNCIONANDO */}
+          {/* Modo Crise */}
           <Stack.Screen
             name="CrisisScreen"
             component={CrisisScreen}
@@ -89,9 +93,29 @@ export default function AppNavigator() {
               headerBackTitle: "Voltar",
             }}
           />
+
+          {/* Minijogos */}
+          <Stack.Screen
+            name="CrisisGames"
+            component={CrisisGamesScreen}
+            options={{
+              title: "Minijogos",
+              headerBackTitle: "Voltar",
+            }}
+          />
+
+          {/* Água — sem cabeçalho */}
+          <Stack.Screen
+            name="WaterTracker"
+            component={WaterTrackerScreen}
+            options={{
+              headerShown: false,
+            }}
+          />
         </>
       ) : (
         <>
+          {/* Auth */}
           <Stack.Screen
             name="Login"
             component={LoginScreen}

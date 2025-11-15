@@ -4,6 +4,9 @@ import { Note } from '@/types/models';
 import { Alert } from 'react-native';
 import { v4 as uuidv4 } from 'uuid';
 
+// 🚨 ADICIONADO
+import { gamification } from '@/gamification/GamificationEngine';
+
 // -------------------------------------------------------------
 // Hook principal — gerenciamento de notas
 // -------------------------------------------------------------
@@ -46,6 +49,9 @@ export function useNotes() {
         const updated = [newNote, ...notes]; // nova no topo
         setNotes(updated);
         await saveNotes(updated);
+
+        // 🚨 GAMIFICAÇÃO — SEM INVENTAR NADA
+        await gamification.registerEvent("note_created");
 
         console.log('📝 Nota criada:', newNote.title);
       } catch (e) {
@@ -107,7 +113,6 @@ export function useNotes() {
           n.id === id ? { ...n, pinned: !n.pinned, updatedAt: new Date().toISOString() } : n,
         );
 
-        // notas fixadas vêm primeiro
         const sorted = [
           ...updatedList.filter((n) => n.pinned),
           ...updatedList.filter((n) => !n.pinned),
@@ -126,7 +131,7 @@ export function useNotes() {
   );
 
   // -----------------------------------------------------------
-  // Buscar por palavra-chave (case insensitive)
+  // Buscar por palavra-chave
   // -----------------------------------------------------------
   const searchNotes = useCallback(
     (query: string): Note[] => {

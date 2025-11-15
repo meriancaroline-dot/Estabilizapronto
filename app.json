@@ -3,30 +3,24 @@
     "name": "Estabiliza",
     "slug": "estabiliza",
     "scheme": "estabiliza",
-    "version": "1.0.0",
+    "version": "1.0.1",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "automatic",
-    "splash": {
-      "image": "./assets/splash.png",
-      "resizeMode": "contain",
-      "backgroundColor": "#FDFBF7"
-    },
     "assetBundlePatterns": [
       "**/*"
     ],
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.seunome.estabiliza",
-      "infoPlist": {
-        "UIBackgroundModes": [
-          "remote-notification"
-        ]
-      }
+      "bundleIdentifier": "com.seunome.estabiliza"
     },
     "android": {
       "package": "com.seunome.estabiliza",
-      "icon": "./assets/icon.png",
+      "versionCode": 4,
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#FFFFFF"
+      },
       "permissions": [
         "android.permission.POST_NOTIFICATIONS"
       ],
@@ -46,9 +40,8 @@
     ],
     "extra": {
       "eas": {
-        "projectId": "99b1489f-987a-4ccf-88fc-37c833a852bf"
+        "projectId": "6b429ee4-4976-41c3-ad94-98edc531f2fe"
       }
-    },
-    "owner": "meycatre"
+    }
   }
 }

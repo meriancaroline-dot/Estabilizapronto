@@ -3,22 +3,10 @@
     "version": ">= 3.17.1"
   },
   "build": {
-    "production": {
-      "android": {
-        "buildType": "app-bundle"
-      }
-    },
-    "preview": {
+    "apk": {
       "android": {
         "buildType": "apk"
       }
-    },
-    "development": {
-      "developmentClient": true,
-      "distribution": "internal"
     }
-  },
-  "submit": {
-    "production": {}
   }
 }

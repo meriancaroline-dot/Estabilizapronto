@@ -10,15 +10,18 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import dayjs from 'dayjs';
 import 'dayjs/locale/pt-br';
 
+// 🚨 ADICIONADO
+import { gamification } from '@/gamification/GamificationEngine';
+
 // -----------------------------
 // Tipos
 // -----------------------------
 export interface MoodEntry {
   id: string;
-  mood: 1 | 2 | 3 | 4 | 5; // escala 1 (péssimo) a 5 (ótimo)
+  mood: 1 | 2 | 3 | 4 | 5;
   note?: string;
   activities: string[];
-  date: string; // formato ISO YYYY-MM-DD
+  date: string;
   userId: string;
 }
 
@@ -50,9 +53,6 @@ export const MoodProvider: React.FC<React.PropsWithChildren> = ({ children }) =>
   const [error, setError] = useState<string | null>(null);
   const [isInitialized, setIsInitialized] = useState(false);
 
-  // -----------------------------
-  // Helpers
-  // -----------------------------
   const persist = useCallback(async (data: MoodEntry[]) => {
     try {
       await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(data));
@@ -100,6 +100,10 @@ export const MoodProvider: React.FC<React.PropsWithChildren> = ({ children }) =>
         const updated = [newEntry, ...moods];
         setMoods(updated);
         await persist(updated);
+
+        // 🚨 REGISTRA GAMIFICAÇÃO AQUI
+        await gamification.registerEvent("mood_log");
+
         return newEntry;
       } catch (e) {
         console.error('Erro ao adicionar mood:', e);

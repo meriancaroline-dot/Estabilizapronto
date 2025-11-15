@@ -14,6 +14,9 @@ export function useDashboardUI() {
   const { stats, completionRates, summary } = useStats();
   const { theme } = useTheme();
 
+  // -----------------------------------------------------------
+  // Seções de estatísticas (cards textuais)
+  // -----------------------------------------------------------
   const sections = useMemo(
     () => [
       {
@@ -55,6 +58,9 @@ export function useDashboardUI() {
     [completionRates, stats, theme.colors]
   );
 
+  // -----------------------------------------------------------
+  // Dicas
+  // -----------------------------------------------------------
   const tips = useMemo(() => {
     const base = [
       "Mantenha pequenas vitórias diárias.",
@@ -74,7 +80,9 @@ export function useDashboardUI() {
     return base.slice(0, 5);
   }, [completionRates.taskRate, stats.streakLongest]);
 
-  // 👇 Alvos em inglês (iguais às rotas), rótulos em português
+  // -----------------------------------------------------------
+  // Atalhos rápidos
+  // -----------------------------------------------------------
   const shortcuts: Shortcut[] = [
     { label: "Humor", icon: "happy-outline", target: "Mood" },
     { label: "Lembretes", icon: "notifications-outline", target: "Reminders" },
@@ -84,12 +92,44 @@ export function useDashboardUI() {
     { label: "Estatísticas", icon: "bar-chart-outline", target: "Stats" },
   ];
 
-  const safeSummary =
-    summary || ({
-      performance: "—",
-      consistency: "—",
-      mood: "—",
-    } as const);
+  // -----------------------------------------------------------
+  // Summary “seguro” pro Dashboard
+  // -> transforma as frases do useStats em números de 0–100
+  // -----------------------------------------------------------
+  const safeSummary = useMemo(() => {
+    const raw = summary ?? {
+      performance: "",
+      consistency: "",
+      mood: "",
+    };
+
+    const extractPercent = (text: string | undefined): string => {
+      if (!text) return "0";
+
+      // tenta pegar o primeiro "NN%"
+      const match = text.match(/(\d+)\s*%/);
+      if (match) return match[1];
+
+      // fallback: arranca tudo que não é número/sinal/ponto e tenta converter
+      const cleaned = text
+        .replace(",", ".")
+        .replace(/[^0-9.-]/g, "");
+      const num = Number(cleaned);
+
+      if (!Number.isFinite(num)) return "0";
+
+      // clamp 0–100 e arredonda
+      const clamped = Math.max(0, Math.min(100, Math.round(num)));
+      return String(clamped);
+    };
+
+    return {
+      performance: extractPercent(raw.performance),
+      consistency: extractPercent(raw.consistency),
+      // mood continua descritivo, não entra nos cards de % do dashboard
+      mood: raw.mood ?? "",
+    };
+  }, [summary]);
 
   return {
     stats,

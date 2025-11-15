@@ -1,31 +1,40 @@
 // App.tsx
-import 'react-native-reanimated';
-import React, { useEffect } from 'react';
-import { StatusBar } from 'react-native';
+import "react-native-reanimated";
+import React, { useEffect } from "react";
+import { StatusBar } from "react-native";
+
 import {
   NavigationContainer,
   DefaultTheme as NavDefaultTheme,
   DarkTheme as NavDarkTheme,
   Theme as NavTheme,
-} from '@react-navigation/native';
-import { GestureHandlerRootView } from 'react-native-gesture-handler';
-import { SafeAreaProvider } from 'react-native-safe-area-context';
+} from "@react-navigation/native";
+import { GestureHandlerRootView } from "react-native-gesture-handler";
+import { SafeAreaProvider } from "react-native-safe-area-context";
 
-import AppNavigator from '@/navigation/AppNavigator';
+import AppNavigator from "@/navigation/AppNavigator";
 
 // Providers
-import { ThemeProvider, useTheme } from '@/hooks/useTheme';
-import { UserProvider } from '@/contexts/UserContext';
-import { NotificationProvider } from '@/contexts/NotificationContext';
-import { WellnessProvider } from '@/contexts/WellnessContext';
-import { AchievementsProvider } from '@/contexts/AchievementsContext';
-import { SettingsProvider } from '@/contexts/SettingsContext';
-import { HabitsProvider } from '@/contexts/HabitsContext';
-import { MoodProvider } from '@/contexts/MoodContext';
-import { RemindersProvider } from '@/contexts/RemindersContext';
+import { ThemeProvider, useTheme } from "@/hooks/useTheme";
+import { UserProvider } from "@/contexts/UserContext";
+import { NotificationProvider } from "@/contexts/NotificationContext";
+import { WellnessProvider } from "@/contexts/WellnessContext";
+import { AchievementsProvider } from "@/contexts/AchievementsContext";
+import { SettingsProvider } from "@/contexts/SettingsContext";
+import { HabitsProvider } from "@/contexts/HabitsContext";
+import { MoodProvider } from "@/contexts/MoodContext";
+import { RemindersProvider } from "@/contexts/RemindersContext";
+import { MissionsProvider } from "@/contexts/MissionsContext";
+import { MissionEventsProvider } from "@/contexts/MissionEventsContext";
 
-import { useMoodPrompts } from '@/hooks/useMoodPrompts';
-import { notificationManager } from '@/utils/NotificationManager';
+import { useMoodPrompts } from "@/hooks/useMoodPrompts";
+import { notificationManager } from "@/utils/NotificationManager";
+
+import { useAchievementTriggers } from "@/gamification/AchievementTriggers";
+import { gamification } from "@/gamification/GamificationEngine";
+
+// 🚫 APAGADO: import * as SplashScreen from "expo-splash-screen";
+// 🚫 APAGADO: SplashScreen.preventAutoHideAsync();
 
 function InnerNavigation() {
   const { theme, isDark } = useTheme();
@@ -44,6 +53,12 @@ function InnerNavigation() {
     },
   };
 
+  useEffect(() => {
+    // Inicializa sem splash
+    gamification.init();
+  }, []);
+
+  useAchievementTriggers();
   useMoodPrompts();
 
   useEffect(() => {
@@ -53,7 +68,7 @@ function InnerNavigation() {
   return (
     <>
       <StatusBar
-        barStyle={isDark ? 'light-content' : 'dark-content'}
+        barStyle={isDark ? "light-content" : "dark-content"}
         backgroundColor={theme.colors.background}
       />
 
@@ -68,7 +83,6 @@ export default function App() {
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaProvider>
-
         <ThemeProvider>
           <UserProvider>
             <SettingsProvider>
@@ -78,7 +92,11 @@ export default function App() {
                     <MoodProvider>
                       <RemindersProvider>
                         <AchievementsProvider>
-                          <InnerNavigation />
+                          <MissionsProvider>
+                            <MissionEventsProvider>
+                              <InnerNavigation />
+                            </MissionEventsProvider>
+                          </MissionsProvider>
                         </AchievementsProvider>
                       </RemindersProvider>
                     </MoodProvider>
@@ -88,7 +106,6 @@ export default function App() {
             </SettingsProvider>
           </UserProvider>
         </ThemeProvider>
-
       </SafeAreaProvider>
     </GestureHandlerRootView>
   );

@@ -65,10 +65,6 @@ export default function ProfessionalsScreen() {
     }
   };
 
-  const openCrisisScreen = () => {
-    navigation.navigate("CrisisScreen");
-  };
-
   return (
     <SafeAreaView
       style={[styles.safe, { backgroundColor: colors.background }]}
@@ -182,41 +178,6 @@ export default function ProfessionalsScreen() {
                 </Text>
               </View>
             </View>
-
-            {/* ⭐ MODO CRISE — (Opção C) */}
-            <TouchableOpacity
-              style={[
-                styles.crisisCard,
-                {
-                  backgroundColor: colors.background,
-                  borderColor: colors.primary,
-                },
-              ]}
-              onPress={openCrisisScreen}
-              activeOpacity={0.8}
-            >
-              <View style={styles.crisisContent}>
-                <Ionicons name="warning-outline" size={28} color={colors.primary} />
-                <View style={{ flex: 1 }}>
-                  <Text style={[styles.crisisTitle, { color: colors.text }]}>
-                    Modo de Crise
-                  </Text>
-                  <Text
-                    style={[
-                      styles.crisisSubtitle,
-                      { color: colors.textSecondary },
-                    ]}
-                  >
-                    Acesso rápido a ajuda imediata
-                  </Text>
-                </View>
-                <Ionicons
-                  name="chevron-forward"
-                  size={22}
-                  color={colors.textSecondary}
-                />
-              </View>
-            </TouchableOpacity>
 
             {/* Info box */}
             <View
@@ -358,25 +319,6 @@ const styles = StyleSheet.create({
     fontSize: 11,
     marginTop: 6,
     textAlign: "center",
-  },
-
-  crisisCard: {
-    borderWidth: 1.5,
-    padding: 16,
-    borderRadius: 16,
-    marginBottom: 20,
-  },
-  crisisContent: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 14,
-  },
-  crisisTitle: {
-    fontSize: 17,
-    fontWeight: "600",
-  },
-  crisisSubtitle: {
-    fontSize: 13,
   },
 
   infoBox: {

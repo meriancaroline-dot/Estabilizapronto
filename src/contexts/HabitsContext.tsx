@@ -9,6 +9,7 @@ import React, {
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import dayjs from 'dayjs';
 import 'dayjs/locale/pt-br';
+import { gamification } from '@/gamification/GamificationEngine';
 
 // -----------------------------
 // Tipos
@@ -165,17 +166,14 @@ export const HabitsProvider: React.FC<React.PropsWithChildren> = ({ children }) 
 
         let updated: Habit;
         if (completed) {
-          // desmarcar
           updated = {
             ...target,
             completedDates: target.completedDates.filter((d) => d !== today),
           };
         } else {
-          // marcar como feito
           const updatedDates = [...target.completedDates, today];
           updatedDates.sort((a, b) => a.localeCompare(b));
 
-          // Recalcula streak
           let streak = 0;
           let current = dayjs(today);
           while (updatedDates.includes(current.format('YYYY-MM-DD'))) {
@@ -184,6 +182,8 @@ export const HabitsProvider: React.FC<React.PropsWithChildren> = ({ children }) 
           }
 
           updated = { ...target, completedDates: updatedDates, streak };
+
+          gamification.registerEvent('habit_complete');
         }
 
         const updatedList = habits.map((h) => (h.id === id ? updated : h));
@@ -207,7 +207,7 @@ export const HabitsProvider: React.FC<React.PropsWithChildren> = ({ children }) 
     const today = dayjs().format('YYYY-MM-DD');
     return habits.filter((h) => {
       if (h.frequency === 'daily') return true;
-      if (h.frequency === 'weekly') return dayjs(today).day() === 1; // exemplo: segunda-feira
+      if (h.frequency === 'weekly') return dayjs(today).day() === 1;
       if (h.frequency === 'monthly') return dayjs(today).date() === 1;
       return false;
     });
@@ -219,7 +219,6 @@ export const HabitsProvider: React.FC<React.PropsWithChildren> = ({ children }) 
       if (!habit) return 0;
       const totalDays = habit.completedDates.length;
       if (totalDays === 0) return 0;
-      // limite para exibição visual (pode personalizar)
       return Math.min((habit.streak / totalDays) * 100, 100);
     },
     [habits],
